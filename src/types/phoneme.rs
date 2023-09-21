@@ -92,3 +92,5 @@ impl Phoneme {
         self.symbol.push_str(diacritic.as_ref());
     }
 }
+
+pub struct PhonemeQuality<A: Category, B: Category, C: Category>(Rc<[A]>, Rc<[B]>, Rc<[C]>);
