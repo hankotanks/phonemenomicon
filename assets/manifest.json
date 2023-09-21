@@ -1,6 +1,6 @@
 {
-  "name": "egui Template PWA",
-  "short_name": "egui-template-pwa",
+  "name": "Phonemenomicon PWA",
+  "short_name": "phonemenomicon-pwa",
   "icons": [
     {
       "src": "./icon-256.png",
