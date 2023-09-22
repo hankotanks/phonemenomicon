@@ -1,15 +1,18 @@
 use std::collections::HashMap;
+use std::rc::Rc;
 
+use enum_iterator::{all, Sequence};
 use enum_map::{EnumMap, EnumArray};
 use slotmap::DefaultKey;
 
 use crate::types::category::Category;
-use crate::types::PhonemeQuality;
+use crate::types::{PhonemeQuality, PhonemeSelector};
 
 pub struct Alphabet<A, B, C> where
     A: Category + EnumArray<EnumMap<B, EnumMap<C, Option<DefaultKey>>>>,
     B: Category + EnumArray<EnumMap<C, Option<DefaultKey>>>,
     C: Category + EnumArray<Option<DefaultKey>> {
+        
     query: EnumMap<A, EnumMap<B, EnumMap<C, Option<DefaultKey>>>>,
     quality: HashMap<DefaultKey, PhonemeQuality<A, B, C>>
 }
@@ -79,8 +82,11 @@ impl<A, B, C> Alphabet<A, B, C> where
         self.query[a][b][c]
     }
 
-    pub fn get_matching(&self) {
-        // TODO
+    pub fn select_phonemes(&self, query: PhonemeSelector<A, B, C>) -> impl Iterator<Item = DefaultKey> + '_ {
+        self.quality
+            .keys()
+            .filter(move |&id| self.meets_restrictions(*id, query.clone()))
+            .cloned()
     }
 
     pub fn get_quality(&self, id: DefaultKey) -> Option<PhonemeQuality<A, B, C>> {
@@ -91,11 +97,29 @@ impl<A, B, C> Alphabet<A, B, C> where
     /// If `restriction` is (Plosive, [Dental, Alveolar], [Voiced, Voiceless])
     /// And the phoneme tested is 'd' (Plosive, [Alevolar, PostAlveolar], Voiced)
     /// This function returns truthy
-    pub fn meets_restrictions(&self, id: DefaultKey, restriction: PhonemeQuality<A, B, C>) -> bool {
+    /// Empty slices are shorthand for 'all variants'
+    /// Because you would never search for an 
+    pub fn meets_restrictions(&self, id: DefaultKey, mut restriction: PhonemeSelector<A, B, C>) -> bool {
         let quality = match self.get_quality(id) {
             Some(quality) => quality,
             None => panic!()
         };
+
+        if restriction.0.is_empty() //
+            && restriction.1.is_empty() //
+            && restriction.2.is_empty() {
+
+            return true;
+        }
+
+        fn every_variant<T: Sequence>() -> Rc<[T]> {
+            let variants = all::<T>().collect::<Vec<_>>();
+            Rc::from(variants)
+        }
+
+        if restriction.0.is_empty() { restriction.0 = every_variant::<A>(); }
+        if restriction.1.is_empty() { restriction.1 = every_variant::<B>(); }
+        if restriction.2.is_empty() { restriction.2 = every_variant::<C>(); }
         
         let restrictions: Vec<(A, B, C)> = restriction.into_iter().collect();
 

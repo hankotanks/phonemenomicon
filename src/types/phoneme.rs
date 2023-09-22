@@ -159,3 +159,5 @@ impl<'de, A, B, C> serde::Deserialize<'de> for PhonemeQuality<A, B, C>
             Ok(quality)
     }
 }
+
+pub type PhonemeSelector<A, B, C> = PhonemeQuality<A, B, C>;
