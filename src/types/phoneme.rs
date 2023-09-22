@@ -1,4 +1,6 @@
-use std::{borrow::Cow, mem, fmt, rc::Rc};
+use std::{borrow::Cow, mem, fmt, rc::Rc, vec};
+
+use crate::types::category::Category;
 
 const CONSONANT_: &Phone = &Phone::consonant();
 const VOWEL_: &Phone = &Phone::vowel();
@@ -93,4 +95,67 @@ impl Phoneme {
     }
 }
 
-pub struct PhonemeQuality<A: Category, B: Category, C: Category>(Rc<[A]>, Rc<[B]>, Rc<[C]>);
+#[derive(Clone)]
+pub struct PhonemeQuality<A, B, C>(pub Rc<[A]>, pub Rc<[B]>, pub Rc<[C]>)
+    where A: Category, B: Category, C: Category;
+
+impl<A, B, C> IntoIterator for PhonemeQuality<A, B, C>
+    where A: Category, B: Category, C: Category {
+
+    type Item = (A, B, C);
+    type IntoIter = vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        let mut queries = Vec::new();
+        for a in self.0.into_iter() {
+            for b in self.1.into_iter() {
+                for c in self.2.into_iter() {
+                    queries.push((*a, *b, *c));
+                }
+            }
+        }
+
+        queries.into_iter()
+    }
+}
+
+impl<A, B, C> serde::Serialize for PhonemeQuality<A, B, C>
+    where A: Category, B: Category, C: Category {
+
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where S: serde::Serializer {
+
+        #[derive(serde::Serialize)]
+        struct Intermediate<A, B, C> { a: Vec<A>, b: Vec<B>, c: Vec<C> }
+
+        let intermediate = Intermediate {
+            a: self.0.to_vec(),
+            b: self.1.to_vec(),
+            c: self.2.to_vec()
+        };
+
+        intermediate.serialize(serializer)
+    }
+}
+
+impl<'de, A, B, C> serde::Deserialize<'de> for PhonemeQuality<A, B, C>
+    where A: Category, B: Category, C: Category {
+
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where D: serde::Deserializer<'de> {
+        
+            #[derive(serde::Deserialize)]
+            struct Intermediate<A, B, C> { a: Vec<A>, b: Vec<B>, c: Vec<C> }
+
+            let intermediate = Intermediate::deserialize(deserializer)?;
+            let Intermediate { a, b, c } = intermediate;
+
+            let quality = Self(
+                Rc::from(a.as_slice()), 
+                Rc::from(b.as_slice()), 
+                Rc::from(c.as_slice())
+            );
+
+            Ok(quality)
+    }
+}

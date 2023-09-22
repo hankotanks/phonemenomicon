@@ -1,6 +1,7 @@
 use enum_map::EnumMap;
 
-use crate::{State, pane::{PaneId, Pane, init_panes}, types::{Phoneme, Phone}};
+use crate::State;
+use crate::pane::{PaneId, Pane, init_panes};
 
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)]
@@ -12,13 +13,9 @@ pub struct App {
 
 impl Default for App {
     fn default() -> Self {
-        let mut state = State::default();
-
-        let panes = init_panes();
-
         Self { 
-            state, 
-            panes
+            state: State::default(), 
+            panes: init_panes()
         }
     }
 }
@@ -26,12 +23,6 @@ impl Default for App {
 impl App {
     // Called once before the first frame.
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
-        let mut phoneme = Phoneme::new("d", Phone::consonant());
-        phoneme.phone = Phone::Consonant { affricated: Some("v".into()), regionalized: None };
-        phoneme.phone.regionalize("ʷ");
-        phoneme.add_diacritic("\u{0324}");
-        log::info!("{}", phoneme);
-
         if let Some(storage) = cc.storage {
             return eframe::get_value(storage, eframe::APP_KEY)
                 .unwrap_or_default();

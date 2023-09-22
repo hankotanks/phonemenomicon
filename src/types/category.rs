@@ -9,20 +9,20 @@ pub trait Category: //
     PartialEq + Eq + hash::Hash + //
     Sequence + Enum + //
     de::DeserializeOwned + serde::Serialize + //
-    fmt::Display + 'static { /*  */ }
+    fmt::Display + fmt::Debug + 'static { /*  */ }
 
 impl<T: //
     Clone + Copy + //
     PartialEq + Eq + hash::Hash + //
     Sequence + Enum + //
     de::DeserializeOwned + serde::Serialize + //
-    fmt::Display + 'static> Category for T { /*  */ }
+    fmt::Display + fmt::Debug + 'static> Category for T { /*  */ }
 
 pub trait CategoryColor {
     fn as_color(&self) -> egui::Color32;
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 #[derive(Sequence, Enum)]
 #[derive(serde::Deserialize, serde::Serialize)]
 pub enum Articulation {
@@ -52,7 +52,7 @@ impl fmt::Display for Articulation {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 #[derive(Sequence, Enum)]
 #[derive(serde::Deserialize, serde::Serialize)]
 pub enum Region {
@@ -88,7 +88,7 @@ impl fmt::Display for Region {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 #[derive(Sequence, Enum)]
 #[derive(serde::Deserialize, serde::Serialize)]
 pub enum Voicing {
@@ -115,7 +115,7 @@ impl fmt::Display for Voicing {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 #[derive(Sequence, Enum)]
 #[derive(serde::Deserialize, serde::Serialize)]
 pub enum Constriction {
@@ -143,7 +143,7 @@ impl fmt::Display for Constriction {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 #[derive(Sequence, Enum)]
 #[derive(serde::Deserialize, serde::Serialize)]
 pub enum Place {
@@ -163,7 +163,7 @@ impl fmt::Display for Place {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 #[derive(Sequence, Enum)]
 #[derive(serde::Deserialize, serde::Serialize)]
 pub enum Rounding {
