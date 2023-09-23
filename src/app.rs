@@ -53,7 +53,7 @@ fn load_fonts() -> egui::FontDefinitions {
 }
 
 #[allow(dead_code)]
-pub static FONT_ID: Lazy<egui::FontId> = Lazy::new(|| egui::FontId {
+pub static IPA_FONT_ID: Lazy<egui::FontId> = Lazy::new(|| egui::FontId {
     size: 16.,
     family: IPA_FONT_FAMILY.to_owned()
 });

@@ -5,7 +5,17 @@ use std::fmt;
 use egui_extras::Size;
 use enum_iterator::cardinality;
 
-use crate::{pane::Pane, types::category::{Voicing, Rounding, Region, Place}};
+use crate::app::IPA_FONT_ID;
+use crate::pane::Pane;
+
+use crate::types::category::{
+    Articulation,
+    Region,
+    Voicing,
+    Constriction,
+    Place,
+    Rounding
+};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum LanguagePaneRole {
@@ -35,10 +45,22 @@ impl LanguagePane {
 }
 
 impl Pane for LanguagePane {
-    fn setup<'a, 'b: 'a>(&'a mut self, _ctx: &egui::Context) -> egui::Window<'b> {
+    fn setup<'a, 'b: 'a>(&'a mut self, ctx: &egui::Context) -> egui::Window<'b> {
+        let spacing = ctx.style().spacing.item_spacing;
+        let padding = ctx.style().spacing.button_padding;
+
+        let width = cardinality::<Region>() * cardinality::<Voicing>();
+        let width = cardinality::<Place>() * cardinality::<Rounding>() + width;
+        let width = (IPA_FONT_ID.size + spacing.x) * width as f32;
+
+        let height = cardinality::<Articulation>().max(cardinality::<Constriction>());
+        let height = (IPA_FONT_ID.size + (spacing.y + padding.y) * 2.) * (height + 1) as f32;
+        
         egui::Window::new(format!("{}", self.role))
             .resizable(true)
             .constrain(true)
+            .min_width(width)
+            .min_height(height)
     }
 
     fn show(&mut self, state: &mut crate::State, ui: &mut egui::Ui) {        
