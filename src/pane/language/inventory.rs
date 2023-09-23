@@ -40,28 +40,20 @@ impl<'a, 'b, A, B, C> InventoryPane<'a, 'b, A, B, C>
 
         let cell_column_count = cardinality::<B>() * cardinality::<C>();
 
-        let cell_width = ui.available_width() / cell_column_count as f32;
-        let cell_width_size = Size::remainder(); // Size::initial(cell_width).at_least(cell_width);
-
-        // TODO: cell_height should be fixed, to the height of the IPA font's size
-        // So, set up the font loader first
-        let cell_height = ui.available_height() / cardinality::<A>() as f32;
-        let cell_height_size = Size::remainder(); // Size::initial(cell_height).at_least(cell_height);
-
         StripBuilder::new(ui)
-            .sizes(cell_height_size, cardinality::<A>())
+            .sizes(Size::remainder(), cardinality::<A>())
             .vertical(|mut strip| {
                 for a in all::<A>() {
                     strip.cell(|ui| {
                         StripBuilder::new(ui)
-                            .sizes(cell_width_size, cell_column_count)
+                            .sizes(Size::remainder(), cell_column_count)
                             .horizontal(|mut strip| {
                                 for b in all::<B>() {
                                     for c in all::<C>() {
                                         match inventory.get((a, b, c)) {
                                             Some(id) => {
                                                 strip.cell(|ui| {
-                                                    let content = format!("{}", phonemes[id]);
+                                                    let content: egui::RichText = phonemes[id].clone().into();
                                                     let _ = ui.button(content);
                                                 });
                                             },

@@ -1,4 +1,7 @@
+use std::marker;
+
 use enum_map::EnumMap;
+use once_cell::sync::Lazy;
 
 use crate::State;
 use crate::pane::{PaneId, Pane, init_panes};
@@ -19,10 +22,47 @@ impl Default for App {
         }
     }
 }
+#[allow(non_upper_case_globals, dead_code)]
+const GentiumPlus: marker::PhantomData<fn() -> ()> = marker::PhantomData;
+
+const IPA_FONT_NAME: &str = stringify!(GentiumPlus);
+const IPA_FONT_BYTES: &[u8] = include_bytes!(concat!(
+    "../assets/fonts/", 
+    stringify!(GentiumPlus), 
+    ".ttf"
+));
+
+pub static IPA_FONT_FAMILY: Lazy<egui::FontFamily> = Lazy::new(|| {
+    egui::FontFamily::Name("IPA".into())
+});
+
+fn load_fonts() -> egui::FontDefinitions {
+    let mut fonts = egui::FontDefinitions::default();
+
+    fonts.font_data.insert(
+        IPA_FONT_NAME.to_owned(),
+        egui::FontData::from_static(IPA_FONT_BYTES)
+    );
+
+    fonts.families.insert(
+        IPA_FONT_FAMILY.to_owned(), 
+        vec![IPA_FONT_NAME.to_owned()]
+    );
+
+    fonts
+}
+
+#[allow(dead_code)]
+pub static FONT_ID: Lazy<egui::FontId> = Lazy::new(|| egui::FontId {
+    size: 16.,
+    family: IPA_FONT_FAMILY.to_owned()
+});
 
 impl App {
     // Called once before the first frame.
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
+        cc.egui_ctx.set_fonts(load_fonts());
+
         if let Some(storage) = cc.storage {
             return eframe::get_value(storage, eframe::APP_KEY)
                 .unwrap_or_default();

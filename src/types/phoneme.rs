@@ -1,6 +1,6 @@
 use std::{borrow::Cow, mem, fmt, rc::Rc, vec};
 
-use crate::types::category::Category;
+use crate::{types::category::Category, app::FONT_ID};
 
 const CONSONANT_: &Phone = &Phone::consonant();
 const VOWEL_: &Phone = &Phone::vowel();
@@ -92,6 +92,12 @@ impl Phoneme {
         let diacritic: Cow<'_, str> = diacritic.into();
 
         self.symbol.push_str(diacritic.as_ref());
+    }
+}
+
+impl Into<egui::RichText> for Phoneme {
+    fn into(self) -> egui::RichText {
+        egui::RichText::from(format!("{}", self)).font(FONT_ID.to_owned())
     }
 }
 

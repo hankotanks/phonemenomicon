@@ -2,7 +2,10 @@ mod inventory;
 
 use std::fmt;
 
-use crate::pane::Pane;
+use egui_extras::Size;
+use enum_iterator::cardinality;
+
+use crate::{pane::Pane, types::category::{Voicing, Rounding, Region, Place}};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum LanguagePaneRole {
@@ -38,7 +41,7 @@ impl Pane for LanguagePane {
             .constrain(true)
     }
 
-    fn show(&mut self, state: &mut crate::State, ui: &mut egui::Ui) {
+    fn show(&mut self, state: &mut crate::State, ui: &mut egui::Ui) {        
         let (mut consonants, mut vowels) = match self.role {
             LanguagePaneRole::Inventory => {
                 let consonants = inventory::InventoryPane {
@@ -70,11 +73,22 @@ impl Pane for LanguagePane {
             }
         };
 
-        ui.vertical(|ui| {
-            consonants.display(&state.phonemes, ui);
-            //vowels.display(&state.phonemes, ui);
-        });
+        let columns_c = (cardinality::<Region>() * cardinality::<Voicing>()) as f32;
+        let columns_v = (cardinality::<Place>() * cardinality::<Rounding>()) as f32;
 
-        
+        let proportion = columns_c / (columns_c + columns_v);
+
+        egui_extras::StripBuilder::new(ui)
+            .size(Size::relative(proportion))
+            .size(Size::remainder())
+            .horizontal(|mut strip| {
+                strip.cell(|ui| {
+                    consonants.display(&state.phonemes, ui);
+                });
+
+                strip.cell(|ui| {
+                    vowels.display(&state.phonemes, ui);
+                })
+            });        
     }
 }
