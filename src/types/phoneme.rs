@@ -160,4 +160,72 @@ impl<'de, A, B, C> serde::Deserialize<'de> for PhonemeQuality<A, B, C>
     }
 }
 
+// TODO: There must be a better way to implement all of these into's
+// Maybe by having an intermediate type that implements into for both A and &[A]
+
+impl<A, B, C> From<(A, B, C)> for PhonemeQuality<A, B, C> 
+    where A: Category, B: Category, C: Category {
+
+    fn from(value: (A, B, C)) -> Self {
+        Self(Rc::from([value.0]), Rc::from([value.1]), Rc::from([value.2]))
+    }
+}
+
+impl<A, B, C> From<(&[A], B, C)> for PhonemeQuality<A, B, C> 
+    where A: Category, B: Category, C: Category {
+
+    fn from(value: (&[A], B, C)) -> Self {
+        Self(Rc::from(value.0), Rc::from([value.1]), Rc::from([value.2]))
+    }
+}
+
+impl<A, B, C> From<(A, &[B], C)> for PhonemeQuality<A, B, C> 
+    where A: Category, B: Category, C: Category {
+
+    fn from(value: (A, &[B], C)) -> Self {
+        Self(Rc::from([value.0]), Rc::from(value.1), Rc::from([value.2]))
+    }
+}
+
+impl<A, B, C> From<(A, B, &[C])> for PhonemeQuality<A, B, C> 
+    where A: Category, B: Category, C: Category {
+
+    fn from(value: (A, B, &[C])) -> Self {
+        Self(Rc::from([value.0]), Rc::from([value.1]), Rc::from(value.2))
+    }
+}
+
+impl<A, B, C> From<(&[A], &[B], C)> for PhonemeQuality<A, B, C> 
+    where A: Category, B: Category, C: Category {
+
+    fn from(value: (&[A], &[B], C)) -> Self {
+        Self(Rc::from(value.0), Rc::from(value.1), Rc::from([value.2]))
+    }
+}
+
+impl<A, B, C> From<(&[A], B, &[C])> for PhonemeQuality<A, B, C> 
+    where A: Category, B: Category, C: Category {
+
+    fn from(value: (&[A], B, &[C])) -> Self {
+        Self(Rc::from(value.0), Rc::from([value.1]), Rc::from(value.2))
+    }
+}
+
+impl<A, B, C> From<(A, &[B], &[C])> for PhonemeQuality<A, B, C> 
+    where A: Category, B: Category, C: Category {
+
+    fn from(value: (A, &[B], &[C])) -> Self {
+        Self(Rc::from([value.0]), Rc::from(value.1), Rc::from(value.2))
+    }
+}
+
+impl<A, B, C> From<(&[A], &[B], &[C])> for PhonemeQuality<A, B, C> 
+    where A: Category, B: Category, C: Category {
+
+    fn from(value: (&[A], &[B], &[C])) -> Self {
+        Self(Rc::from(value.0), Rc::from(value.1), Rc::from(value.2))
+    }
+}
+
+
 pub type PhonemeSelector<A, B, C> = PhonemeQuality<A, B, C>;

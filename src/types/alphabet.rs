@@ -1,12 +1,15 @@
+use std::borrow::Cow;
 use std::collections::HashMap;
+use std::mem;
 use std::rc::Rc;
 
 use enum_iterator::{all, Sequence};
 use enum_map::{EnumMap, EnumArray};
-use slotmap::DefaultKey;
+use slotmap::{DefaultKey, SlotMap};
 
 use crate::types::category::Category;
-use crate::types::{PhonemeQuality, PhonemeSelector};
+use crate::types::{PhonemeQuality, PhonemeSelector, Phoneme, Phone};
+use crate::types::{CONSONANT, VOWEL};
 
 pub struct Alphabet<A, B, C> where
     A: Category + EnumArray<EnumMap<B, EnumMap<C, Option<DefaultKey>>>>,
@@ -125,4 +128,29 @@ impl<A, B, C> Alphabet<A, B, C> where
 
         quality.into_iter().any(|item| restrictions.contains(&item))
     }
+}
+
+pub fn add_symbol_to_alphabet<'a, A, B, C, I, J>(
+    phonemes: &mut SlotMap<slotmap::DefaultKey, Phoneme>, 
+    alphabet: &mut Alphabet<A, B, C>,
+    symbol: I,
+    phone: mem::Discriminant<Phone>,
+    quality: J) where
+    A: Category + EnumArray<EnumMap<B, EnumMap<C, Option<DefaultKey>>>>,
+    B: Category + EnumArray<EnumMap<C, Option<DefaultKey>>>,
+    C: Category + EnumArray<Option<DefaultKey>>,
+    I: Into<Cow<'a, str>>,
+    J: Into<PhonemeQuality<A, B, C>> {
+
+    let phone = if phone == CONSONANT {
+        Phone::consonant()
+    } else if phone == VOWEL {
+        Phone::vowel()
+    } else {
+        panic!();
+    };
+
+    let phoneme = Phoneme::new(symbol, phone);
+
+    alphabet.add_phoneme(phonemes.insert(phoneme), quality.into());
 }
