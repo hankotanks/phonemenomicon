@@ -4,26 +4,22 @@ use std::mem;
 use std::rc::Rc;
 
 use enum_iterator::{all, Sequence};
-use enum_map::{EnumMap, EnumArray};
+use enum_map::EnumMap;
 use slotmap::{DefaultKey, SlotMap};
 
-use crate::types::category::Category;
+use crate::types::category::{Outer, Inner, Pair};
 use crate::types::{PhonemeQuality, PhonemeSelector, Phoneme, Phone};
 use crate::types::{CONSONANT, VOWEL};
 
-pub struct Alphabet<A, B, C> where
-    A: Category + EnumArray<EnumMap<B, EnumMap<C, Option<DefaultKey>>>>,
-    B: Category + EnumArray<EnumMap<C, Option<DefaultKey>>>,
-    C: Category + EnumArray<Option<DefaultKey>> {
+pub struct Alphabet<A, B, C> 
+    where A: Outer<B, C>, B: Inner<C>, C: Pair {
         
     query: EnumMap<A, EnumMap<B, EnumMap<C, Option<DefaultKey>>>>,
     quality: HashMap<DefaultKey, PhonemeQuality<A, B, C>>
 }
 
-impl<A, B, C> serde::Serialize for Alphabet<A, B, C> where
-    A: Category + EnumArray<EnumMap<B, EnumMap<C, Option<DefaultKey>>>>,
-    B: Category + EnumArray<EnumMap<C, Option<DefaultKey>>>,
-    C: Category + EnumArray<Option<DefaultKey>> {
+impl<A, B, C> serde::Serialize for Alphabet<A, B, C> 
+    where A: Outer<B, C>, B: Inner<C>, C: Pair {
 
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: serde::Serializer {
@@ -38,10 +34,8 @@ impl<A, B, C> serde::Serialize for Alphabet<A, B, C> where
     }
 }
 
-impl<'de, A, B, C> serde::Deserialize<'de> for Alphabet<A, B, C> where
-    A: Category + EnumArray<EnumMap<B, EnumMap<C, Option<DefaultKey>>>>,
-    B: Category + EnumArray<EnumMap<C, Option<DefaultKey>>>,
-    C: Category + EnumArray<Option<DefaultKey>> {
+impl<'de, A, B, C> serde::Deserialize<'de> for Alphabet<A, B, C> 
+    where A: Outer<B, C>, B: Inner<C>, C: Pair {
     
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
         where D: serde::Deserializer<'de> {
@@ -59,10 +53,8 @@ impl<'de, A, B, C> serde::Deserialize<'de> for Alphabet<A, B, C> where
     }
 }
 
-impl<A, B, C> Alphabet<A, B, C> where
-    A: Category + EnumArray<EnumMap<B, EnumMap<C, Option<DefaultKey>>>>,
-    B: Category + EnumArray<EnumMap<C, Option<DefaultKey>>>,
-    C: Category + EnumArray<Option<DefaultKey>>  {
+impl<A, B, C> Alphabet<A, B, C> 
+    where A: Outer<B, C>, B: Inner<C>, C: Pair {
     
     pub fn new() -> Self {
         Self {
@@ -130,17 +122,15 @@ impl<A, B, C> Alphabet<A, B, C> where
     }
 }
 
-pub fn add_symbol_to_alphabet<'a, A, B, C, I, J>(
+pub fn add_symbol_to_alphabet<'a, A, B, C>(
     phonemes: &mut SlotMap<slotmap::DefaultKey, Phoneme>, 
     alphabet: &mut Alphabet<A, B, C>,
-    symbol: I,
+    symbol: impl Into<Cow<'a, str>>,
     phone: mem::Discriminant<Phone>,
-    quality: J) where
-    A: Category + EnumArray<EnumMap<B, EnumMap<C, Option<DefaultKey>>>>,
-    B: Category + EnumArray<EnumMap<C, Option<DefaultKey>>>,
-    C: Category + EnumArray<Option<DefaultKey>>,
-    I: Into<Cow<'a, str>>,
-    J: Into<PhonemeQuality<A, B, C>> {
+    quality: impl Into<PhonemeQuality<A, B, C>>) where
+    A: Outer<B, C>,
+    B: Inner<C>,
+    C: Pair {
 
     let phone = if phone == CONSONANT {
         Phone::consonant()

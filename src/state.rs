@@ -11,6 +11,8 @@ pub struct State {
     pub phonemes: SlotMap<slotmap::DefaultKey, Phoneme>,
     pub inventory: Language,
     pub ipa: Language,
+    pub invalid: String,
+    pub space: String,
 }
 
 impl Default for State {
@@ -24,7 +26,9 @@ impl Default for State {
         Self {
             phonemes,
             inventory: Language::default(),
-            ipa
+            ipa,
+            invalid: String::from("0"),
+            space: String::from(" ")
         }
     }
 }

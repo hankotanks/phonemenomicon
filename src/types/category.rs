@@ -1,7 +1,7 @@
 use std::{hash, fmt};
 
 use enum_iterator::Sequence;
-use enum_map::Enum;
+use enum_map::{Enum, EnumArray, EnumMap};
 use serde::de;
 
 pub trait Category: //
@@ -17,6 +17,16 @@ impl<T: //
     Sequence + Enum + //
     de::DeserializeOwned + serde::Serialize + //
     fmt::Display + fmt::Debug + 'static> Category for T { /*  */ }
+
+pub trait Pair: Category + EnumArray<Option<slotmap::DefaultKey>> { /*  */ }
+
+pub trait Inner<A>: Category + //
+    EnumArray<EnumMap<A, Option<slotmap::DefaultKey>>> 
+    where A: Pair { /*  */ }
+
+pub trait Outer<A, B>: Category + //
+    EnumArray<EnumMap<A, EnumMap<B, Option<slotmap::DefaultKey>>>> 
+    where A: Inner<B>, B: Pair { /*  */ }
 
 pub trait CategoryColor {
     fn as_color(&self) -> egui::Color32;
@@ -51,6 +61,8 @@ impl fmt::Display for Articulation {
         })
     }
 }
+
+impl Outer<Region, Voicing> for Articulation { /*  */ }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 #[derive(Sequence, Enum)]
@@ -88,6 +100,8 @@ impl fmt::Display for Region {
     }
 }
 
+impl Inner<Voicing> for Region { /*  */ }
+
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 #[derive(Sequence, Enum)]
 #[derive(serde::Deserialize, serde::Serialize)]
@@ -114,6 +128,8 @@ impl fmt::Display for Voicing {
         })
     }
 }
+
+impl Pair for Voicing { /*  */ }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 #[derive(Sequence, Enum)]
@@ -143,6 +159,8 @@ impl fmt::Display for Constriction {
     }
 }
 
+impl Outer<Place, Rounding> for Constriction { /*  */ }
+
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 #[derive(Sequence, Enum)]
 #[derive(serde::Deserialize, serde::Serialize)]
@@ -162,6 +180,8 @@ impl fmt::Display for Place {
         })
     }
 }
+
+impl Inner<Rounding> for Place { /*  */ }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 #[derive(Sequence, Enum)]
@@ -189,3 +209,5 @@ impl fmt::Display for Rounding {
         })
     }
 }
+
+impl Pair for Rounding { /*  */ }
