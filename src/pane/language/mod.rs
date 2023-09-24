@@ -5,7 +5,7 @@ use std::fmt;
 use egui_extras::Size;
 use enum_iterator::cardinality;
 
-use crate::app::IPA_FONT_ID;
+use crate::app::FONT_ID;
 use crate::pane::Pane;
 
 use crate::types::category::{
@@ -51,10 +51,10 @@ impl Pane for LanguagePane {
 
         let width = cardinality::<Region>() * cardinality::<Voicing>();
         let width = cardinality::<Place>() * cardinality::<Rounding>() + width;
-        let width = (IPA_FONT_ID.size + spacing.x) * width as f32;
+        let width = (FONT_ID.size + spacing.x) * width as f32;
 
         let height = cardinality::<Articulation>().max(cardinality::<Constriction>());
-        let height = (IPA_FONT_ID.size + (spacing.y + padding.y) * 2.) * (height + 1) as f32;
+        let height = (FONT_ID.size + (spacing.y + padding.y) * 2.) * (height + 1) as f32;
         
         egui::Window::new(format!("{}", self.role))
             .resizable(true)

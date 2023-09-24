@@ -1,6 +1,6 @@
 use std::{borrow::Cow, mem, fmt, rc::Rc, vec};
 
-use crate::{types::category::Category, app::IPA_FONT_ID};
+use crate::{types::category::Category, app::FONT_ID};
 
 const CONSONANT_: &Phone = &Phone::consonant();
 const VOWEL_: &Phone = &Phone::vowel();
@@ -97,7 +97,7 @@ impl Phoneme {
 
 impl Into<egui::RichText> for Phoneme {
     fn into(self) -> egui::RichText {
-        egui::RichText::from(format!("{}", self)).font(IPA_FONT_ID.to_owned())
+        egui::RichText::from(format!("{}", self)).font(FONT_ID.to_owned())
     }
 }
 

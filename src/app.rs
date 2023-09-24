@@ -1,6 +1,7 @@
-use std::marker;
+use std::{fmt, io};
 
 use enum_map::EnumMap;
+use include_dir::Dir;
 use once_cell::sync::Lazy;
 
 use crate::State;
@@ -22,46 +23,97 @@ impl Default for App {
         }
     }
 }
-#[allow(non_upper_case_globals, dead_code)]
-const GentiumPlus: marker::PhantomData<fn() -> ()> = marker::PhantomData;
 
-const IPA_FONT_NAME: &str = stringify!(GentiumPlus);
-const IPA_FONT_BYTES: &[u8] = include_bytes!(concat!(
-    "../assets/fonts/", 
-    stringify!(GentiumPlus), 
-    ".ttf"
-));
+#[allow(dead_code)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Font {
+    GentiumPlus,
+    Andika,
+    CharisSIL,
+    DoulosSIL
+}
 
-pub static IPA_FONT_FAMILY: Lazy<egui::FontFamily> = Lazy::new(|| {
+impl Font {
+    const fn as_filename(&self) -> &str {
+        // NOTE: These filenames MUST match the contents of /assets/fonts
+        match self {
+            Font::GentiumPlus => "GentiumPlus.ttf",
+            Font::Andika => "Andika.ttf",
+            Font::CharisSIL => "CharisSIL.ttf",
+            Font::DoulosSIL => "DoulosSIL.ttf"
+        }
+    }
+}
+
+impl fmt::Display for Font {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", match self {
+            Font::GentiumPlus => "Gentium Plus",
+            Font::Andika => "Andika",
+            Font::CharisSIL => "Charis SIL",
+            Font::DoulosSIL => "Doulos SIL"
+        })
+    }
+}
+
+static FONT_DATA: Dir<'_> = include_dir::include_dir!("$CARGO_MANIFEST_DIR/assets/fonts");
+
+fn load_font_data(selection: Font) -> anyhow::Result<Vec<u8>> {
+    let glob = format!("**/{}", selection.as_filename());
+
+    let error = io::Error::new(
+        io::ErrorKind::NotFound, 
+        "Unable to load required fonts."
+    );
+
+    let file = FONT_DATA.find(glob.as_str())?.next().unwrap();
+    let file = file.as_file().ok_or(error)?;
+
+    Ok(file.contents().to_vec())
+}
+
+static FONT_FAMILY: Lazy<egui::FontFamily> = Lazy::new(|| {
     egui::FontFamily::Name("IPA".into())
 });
 
-fn load_fonts() -> egui::FontDefinitions {
+#[allow(dead_code)]
+pub static FONT_ID: Lazy<egui::FontId> = Lazy::new(|| egui::FontId {
+    size: 16.,
+    family: FONT_FAMILY.to_owned()
+});
+
+fn load_fonts(selection: Font) -> anyhow::Result<egui::FontDefinitions> {
     let mut fonts = egui::FontDefinitions::default();
 
     fonts.font_data.insert(
-        IPA_FONT_NAME.to_owned(),
-        egui::FontData::from_static(IPA_FONT_BYTES)
+        format!("{}", FONT_SELECTION),
+        egui::FontData::from_owned(load_font_data(selection)?)
     );
 
     fonts.families.insert(
-        IPA_FONT_FAMILY.to_owned(), 
-        vec![IPA_FONT_NAME.to_owned()]
+        FONT_FAMILY.to_owned(), 
+        vec![format!("{}", FONT_SELECTION)]
     );
 
-    fonts
+    Ok(fonts)
 }
 
-#[allow(dead_code)]
-pub static IPA_FONT_ID: Lazy<egui::FontId> = Lazy::new(|| egui::FontId {
-    size: 16.,
-    family: IPA_FONT_FAMILY.to_owned()
-});
+const FONT_SELECTION: Font = Font::GentiumPlus;
 
 impl App {
     // Called once before the first frame.
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
-        cc.egui_ctx.set_fonts(load_fonts());
+        match load_fonts(FONT_SELECTION) {
+            Ok(fonts) => cc.egui_ctx.set_fonts(fonts),
+            Err(error) => {
+                log::error!("{}", error);
+
+                // TODO: Ensure that all Drop occur as they should
+                // Handle this termination behavior better
+                panic!();
+            }
+        }
+        
 
         if let Some(storage) = cc.storage {
             return eframe::get_value(storage, eframe::APP_KEY)
