@@ -1,6 +1,9 @@
-use std::{borrow::Cow, mem, fmt, rc::Rc, vec};
+use std::{mem, fmt, vec};
+use std::rc::Rc;
+use std::borrow::Cow;
 
-use crate::{types::category::Category, app::FONT_ID};
+use crate::types::category::Category;
+use crate::app::FONT_ID;
 
 const CONSONANT_: &Phone = &Phone::consonant();
 const VOWEL_: &Phone = &Phone::vowel();

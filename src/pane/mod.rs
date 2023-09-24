@@ -3,7 +3,9 @@ mod romanization;
 mod lexicon;
 mod sound_change;
 
-use language::{LanguagePane, LanguagePaneRole};
+pub use language::LanguagePaneRole;
+
+use language::LanguagePane;
 use romanization::RomanizationPane;
 use lexicon::LexiconPane;
 use sound_change::SoundChangePane;
@@ -45,7 +47,7 @@ pub fn init_panes() -> EnumMap<PaneId, Box<dyn Pane>> {
             temp
         },
         PaneId::SoundChange => {
-            let temp: Box<dyn Pane> = Box::new(SoundChangePane);
+            let temp: Box<dyn Pane> = Box::new(SoundChangePane { most_recent_buffer: None });
             temp
         }
     }

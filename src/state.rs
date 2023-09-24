@@ -1,5 +1,6 @@
 use slotmap::SlotMap;
 
+use crate::pane::LanguagePaneRole;
 use crate::types::{Phoneme, Language, Alphabet, PhonemeQuality, Phone};
 use crate::types::category;
 
@@ -13,6 +14,9 @@ pub struct State {
     pub ipa: Language,
     pub invalid: Phoneme,
     pub space: Phoneme,
+    
+    #[serde(skip)]
+    pub phoneme_buffer: Option<(slotmap::DefaultKey, LanguagePaneRole)>
 }
 
 impl Default for State {
@@ -28,7 +32,8 @@ impl Default for State {
             inventory: Language::default(),
             ipa,
             invalid: Phoneme::new("0", Phone::consonant()),
-            space: Phoneme::new(" ", Phone::consonant())
+            space: Phoneme::new(" ", Phone::consonant()),
+            phoneme_buffer: None
         }
     }
 }
@@ -53,9 +58,9 @@ fn init_ipa(phonemes: &mut SlotMap<slotmap::DefaultKey, Phoneme>) -> Language {
         add("ʉ", (Close, Central, Rounded).into());
         add("ɯ", (Close, Back, Unrounded).into());
         add("u", (Close, Back, Rounded).into());
-        add("ɪ", (NearClose, Front, Unrounded).into());
-        add("ʏ", (NearClose, Front, Rounded).into());
-        add("ʊ", (NearClose, Back, Rounded).into());
+        add("ɪ", (CloseNear, Front, Unrounded).into());
+        add("ʏ", (CloseNear, Front, Rounded).into());
+        add("ʊ", (CloseNear, Back, Rounded).into());
         add("e", (CloseMid, Front, Unrounded).into());
         add("ø", (CloseMid, Front, Rounded).into());
         add("ɘ", (CloseMid, Central, Unrounded).into());
@@ -69,8 +74,8 @@ fn init_ipa(phonemes: &mut SlotMap<slotmap::DefaultKey, Phoneme>) -> Language {
         add("ɞ", (OpenMid, Central, Rounded).into());
         add("ʌ", (OpenMid, Back, Unrounded).into());
         add("ɔ", (OpenMid, Back, Rounded).into());
-        add("æ", (NearOpen, Front, Unrounded).into());
-        add("ɐ", (NearOpen, Central, &[Unrounded, Rounded][..]).into());
+        add("æ", (OpenNear, Front, Unrounded).into());
+        add("ɐ", (OpenNear, Central, &[Unrounded, Rounded][..]).into());
         add("a", (Open, Front, Unrounded).into());
         add("ɶ", (Open, Front, Rounded).into());
         add("ɑ", (Open, Back, Unrounded).into());
@@ -90,65 +95,65 @@ fn init_ipa(phonemes: &mut SlotMap<slotmap::DefaultKey, Phoneme>) -> Language {
             add_symbol_to_alphabet(phonemes, &mut consonants, symbol, CONSONANT, quality);
         };
 
-        add("p", (Plosive, Bilabial, Unvoiced).into());
+        add("p", (Plosive, Bilabial, Voiceless).into());
         add("b", (Plosive, Bilabial, Voiced).into());
-        add("t", (Plosive, &[Dental, Alveolar][..], Unvoiced).into());
-        add("d", (Plosive, &[Alveolar, PostAlveolar][..], Voiced).into());
-        add("ʈ", (Plosive, Retroflex, Unvoiced).into());
+        add("t", (Plosive, &[Dental, Alveolar][..], Voiceless).into());
+        add("d", (Plosive, &[Alveolar, Post][..], Voiced).into());
+        add("ʈ", (Plosive, Retroflex, Voiceless).into());
         add("ɖ", (Plosive, Retroflex, Voiced).into());
-        add("c", (Plosive, Palatal, Unvoiced).into());
+        add("c", (Plosive, Palatal, Voiceless).into());
         add("ɟ", (Plosive, Palatal, Voiced).into());
-        add("k", (Plosive, Velar, Unvoiced).into());
+        add("k", (Plosive, Velar, Voiceless).into());
         add("g", (Plosive, Velar, Voiced).into());
-        add("q", (Plosive, Uvular, Unvoiced).into());
+        add("q", (Plosive, Uvular, Voiceless).into());
         add("ɢ", (Plosive, Uvular, Voiced).into());
-        add("ʔ", (Plosive, Glottal, Unvoiced).into());
+        add("ʔ", (Plosive, Glottal, Voiceless).into());
         add("m", (Nasal, Bilabial, Voiced).into());
         add("ɱ", (Nasal, Labiodental, Voiced).into());
-        add("n", (Nasal, &[Alveolar, PostAlveolar][..], Voiced).into());
+        add("n", (Nasal, &[Alveolar, Post][..], Voiced).into());
         add("ɳ", (Nasal, Retroflex, Voiced).into());
         add("ɲ", (Nasal, Palatal, Voiced).into());
         add("ŋ", (Nasal, Velar, Voiced).into());
         add("ɴ", (Nasal, Uvular, Voiced).into());
         add("ʙ", (Trill, Bilabial, Voiced).into());
-        add("r", (Trill, &[Alveolar, PostAlveolar][..], Voiced).into());
+        add("r", (Trill, &[Alveolar, Post][..], Voiced).into());
         add("ʀ", (Trill, Uvular, Voiced).into());
-        add("ⱱ", (Tap, Labiodental, Voiced).into());
-        add("ɾ", (Tap, &[Alveolar, PostAlveolar][..], Voiced).into());
-        add("ɽ", (Tap, Retroflex, Voiced).into());
+        add("ⱱ", (Flap, Labiodental, Voiced).into());
+        add("ɾ", (Flap, &[Alveolar, Post][..], Voiced).into());
+        add("ɽ", (Flap, Retroflex, Voiced).into());
 
-        add("ɸ", (Fricative, Bilabial, Unvoiced).into());
+        add("ɸ", (Fricative, Bilabial, Voiceless).into());
         add("β", (Fricative, Bilabial, Voiced).into());
-        add("f", (Fricative, Labiodental, Unvoiced).into());
+        add("f", (Fricative, Labiodental, Voiceless).into());
         add("v", (Fricative, Labiodental, Voiced).into());
-        add("θ", (Fricative, Dental, Unvoiced).into());
+        add("θ", (Fricative, Dental, Voiceless).into());
         add("ð", (Fricative, Dental, Voiced).into());
-        add("s", (Fricative, Alveolar, Unvoiced).into());
+        add("s", (Fricative, Alveolar, Voiceless).into());
         add("z", (Fricative, Alveolar, Voiced).into());
-        add("ʃ", (Fricative, PostAlveolar, Unvoiced).into());
-        add("ʒ", (Fricative, PostAlveolar, Voiced).into());
-        add("ʂ", (Fricative, Retroflex, Unvoiced).into());
+        add("ʃ", (Fricative, Post, Voiceless).into());
+        add("ʒ", (Fricative, Post, Voiced).into());
+        add("ʂ", (Fricative, Retroflex, Voiceless).into());
         add("ʐ", (Fricative, Retroflex, Voiced).into());
-        add("ç", (Fricative, Palatal, Unvoiced).into());
+        add("ç", (Fricative, Palatal, Voiceless).into());
         add("ʝ", (Fricative, Palatal, Voiced).into());
-        add("x", (Fricative, Velar, Unvoiced).into());
+        add("x", (Fricative, Velar, Voiceless).into());
         add("ɣ", (Fricative, Velar, Voiced).into());
-        add("χ", (Fricative, Uvular, Unvoiced).into());
+        add("χ", (Fricative, Uvular, Voiceless).into());
         add("ʁ", (Fricative, Uvular, Voiced).into());
-        add("ħ", (Fricative, Pharyngeal, Unvoiced).into());
+        add("ħ", (Fricative, Pharyngeal, Voiceless).into());
         add("ʕ", (Fricative, Pharyngeal, Voiced).into());
-        add("h", (Fricative, Glottal, Unvoiced).into());
+        add("h", (Fricative, Glottal, Voiceless).into());
         add("ɦ", (Fricative, Glottal, Voiced).into());
 
-        add("ɬ", (LateralFricative, &[Dental, Alveolar][..], Unvoiced).into());
-        add("ɮ", (LateralFricative, &[Alveolar, PostAlveolar][..], Voiced).into());
+        add("ɬ", (LateralFricative, &[Dental, Alveolar][..], Voiceless).into());
+        add("ɮ", (LateralFricative, &[Alveolar, Post][..], Voiced).into());
         add("ʋ", (Approximant, Labiodental, Voiced).into());
-        add("ɹ", (Approximant, &[Alveolar, PostAlveolar][..], Voiced).into());
+        add("ɹ", (Approximant, &[Alveolar, Post][..], Voiced).into());
         add("ɻ", (Approximant, Retroflex, Voiced).into());
         add("j", (Approximant, Palatal, Voiced).into());
         add("ɰ", (Approximant, Velar, Voiced).into());
 
-        add("l", (LateralApproximant, &[Alveolar, PostAlveolar][..], Voiced).into());
+        add("l", (LateralApproximant, &[Alveolar, Post][..], Voiced).into());
         add("ɭ", (LateralApproximant, Retroflex, Voiced).into());
         add("ʎ", (LateralApproximant, Palatal, Voiced).into());
         add("ʟ", (LateralApproximant, Velar, Voiced).into());

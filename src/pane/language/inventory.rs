@@ -46,6 +46,7 @@ fn cell_context<A: Outer<B, C>, B: Inner<C>, C: Pair>(
 fn cell_populated<A: Outer<B, C>, B: Inner<C>, C: Pair + CategoryColor>(
     ui: &mut egui::Ui,
     role: &mut InventoryPaneRole<'_, '_, A, B, C>,
+    phoneme_buffer: &mut Option<(slotmap::DefaultKey, LanguagePaneRole)>,
     phoneme: Phoneme) {
 
     let inventory = match role {
@@ -106,18 +107,19 @@ fn cell_populated<A: Outer<B, C>, B: Inner<C>, C: Pair + CategoryColor>(
     if response.hovered() && ui.input(|input| 
         input.key_pressed(egui::Key::Space)) {
 
-        todo!("Add `phoneme` and `source` to buffer (not yet implemented).")
+        let _ = phoneme_buffer.insert((phoneme.id(), source));
     }
 }
 
 fn cell<A: Outer<B, C>, B: Inner<C>, C: Pair + CategoryColor>(
     strip: &mut Strip<'_, '_>, 
     role: &mut InventoryPaneRole<'_, '_, A, B, C>,
+    phoneme_buffer: &mut Option<(slotmap::DefaultKey, LanguagePaneRole)>,
     occurrence: Option<Phoneme>) {
     
     match occurrence {
         Some(symbol) => strip.cell(|ui| {
-            cell_populated(ui, role, symbol);
+            cell_populated(ui, role, phoneme_buffer, symbol);
         }),
         None => strip.empty()
     }
@@ -145,6 +147,7 @@ impl<'a, 'b, A, B, C> InventoryPane<'a, 'b, A, B, C>
         invalid: Phoneme, 
         space: Phoneme, 
         phonemes: &SlotMap<slotmap::DefaultKey, Phoneme>, 
+        phoneme_buffer: &mut Option<(slotmap::DefaultKey, LanguagePaneRole)>,
         ui: &mut egui::Ui) {
 
         let original_spacing = ui.style().spacing.clone();
@@ -204,7 +207,7 @@ impl<'a, 'b, A, B, C> InventoryPane<'a, 'b, A, B, C>
                             occurrences
                                 .into_iter()
                                 .for_each(|occurrence| {
-                                    cell(&mut strip, &mut self.role, occurrence.0);
+                                    cell(&mut strip, &mut self.role, phoneme_buffer, occurrence.0);
                                 });
                         });
                     });
@@ -227,6 +230,7 @@ impl<'a, 'b, A, B, C> Pane for InventoryPane<'a, 'b, A, B, C>
             state.invalid.clone(), 
             state.space.clone(), 
             &state.phonemes,
+            &mut state.phoneme_buffer,
             ui
         );
     }

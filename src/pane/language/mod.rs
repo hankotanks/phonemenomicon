@@ -109,6 +109,7 @@ impl Pane for LanguagePane {
                         state.invalid.clone(), 
                         state.space.clone(), 
                         &state.phonemes, 
+                        &mut state.phoneme_buffer,
                         ui
                     );
                 });
@@ -118,6 +119,7 @@ impl Pane for LanguagePane {
                         state.invalid.clone(), 
                         state.space.clone(), 
                         &state.phonemes, 
+                        &mut state.phoneme_buffer,
                         ui
                     );
                 })

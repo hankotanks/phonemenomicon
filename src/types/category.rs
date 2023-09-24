@@ -39,7 +39,7 @@ pub enum Articulation {
     Plosive,
     Nasal,
     Trill,
-    Tap,
+    Flap,
     Fricative,
     LateralFricative,
     Approximant,
@@ -53,7 +53,7 @@ impl fmt::Display for Articulation {
             Plosive => "Plosive",
             Nasal => "Nasal",
             Trill => "Trill",
-            Tap => "Tap",
+            Flap => "Tap",
             Fricative => "Fricative",
             LateralFricative => "Lateral Fricative",
             Approximant => "Approximant",
@@ -72,7 +72,7 @@ pub enum Region {
     Labiodental,
     Dental,
     Alveolar,
-    PostAlveolar,
+    Post,
     Retroflex,
     Palatal,
     Velar,
@@ -89,7 +89,7 @@ impl fmt::Display for Region {
             Labiodental => "Labiodental",
             Dental => "Dental",
             Alveolar => "Alveolar",
-            PostAlveolar => "Post Alveolar",
+            Post => "Post Alveolar",
             Retroflex => "Retroflex",
             Palatal => "Palatal",
             Velar => "Velar",
@@ -106,14 +106,14 @@ impl Inner<Voicing> for Region { /*  */ }
 #[derive(Sequence, Enum)]
 #[derive(serde::Deserialize, serde::Serialize)]
 pub enum Voicing {
-    Unvoiced,
+    Voiceless,
     Voiced
 }
 
 impl CategoryColor for Voicing {
     fn as_color(&self) -> egui::Color32 {
         match self {
-            Voicing::Unvoiced => egui::Color32::GOLD,
+            Voicing::Voiceless => egui::Color32::GOLD,
             Voicing::Voiced => egui::Color32::RED
         }
     }
@@ -124,7 +124,7 @@ impl fmt::Display for Voicing {
         use Voicing::*;
         write!(f, "{}", match self {
             Voiced => "Voiced",
-            Unvoiced => "Unvoiced"
+            Voiceless => "Unvoiced"
         })
     }
 }
@@ -136,11 +136,11 @@ impl Pair for Voicing { /*  */ }
 #[derive(serde::Deserialize, serde::Serialize)]
 pub enum Constriction {
     Close,
-    NearClose,
+    CloseNear,
     CloseMid,
     Mid,
     OpenMid,
-    NearOpen,
+    OpenNear,
     Open
 }
 
@@ -149,11 +149,11 @@ impl fmt::Display for Constriction {
         use Constriction::*;
         write!(f, "{}", match self {
             Close => "Close",
-            NearClose => "Near-Close",
+            CloseNear => "Near-Close",
             CloseMid => "Close-Mid",
             Mid => "Mid",
             OpenMid => "Open-Mid",
-            NearOpen => "Near-Open",
+            OpenNear => "Near-Open",
             Open => "Open"
         })
     }
