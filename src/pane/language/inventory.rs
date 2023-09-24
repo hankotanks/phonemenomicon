@@ -41,8 +41,20 @@ impl<'a, 'b, A, B, C> InventoryPane<'a, 'b, A, B, C>
         let cell_column_count = cardinality::<B>() * cardinality::<C>();
 
         StripBuilder::new(ui)
-            .sizes(Size::remainder(), cardinality::<A>())
+            .sizes(Size::remainder(), cardinality::<A>() + 1)
             .vertical(|mut strip| {
+                strip.strip(|builder| {
+                    builder
+                        .sizes(Size::remainder(), cardinality::<B>())
+                        .horizontal(|mut strip| {
+                            for b in all::<B>() {
+                                strip.cell(|ui| {
+                                    ui.label(format!("{}", b));
+                                });
+                            }
+                        });
+                });
+
                 for a in all::<A>() {
                     strip.cell(|ui| {
                         StripBuilder::new(ui)

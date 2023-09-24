@@ -54,7 +54,7 @@ impl Pane for LanguagePane {
         let width = (FONT_ID.size + spacing.x) * width as f32;
 
         let height = cardinality::<Articulation>().max(cardinality::<Constriction>());
-        let height = (FONT_ID.size + (spacing.y + padding.y) * 2.) * (height + 1) as f32;
+        let height = (FONT_ID.size + (spacing.y + padding.y) * 2.) * (height + 2) as f32;
         
         egui::Window::new(format!("{}", self.role))
             .resizable(true)
