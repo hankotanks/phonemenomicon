@@ -8,7 +8,7 @@ const VOWEL_: &Phone = &Phone::vowel();
 pub const CONSONANT: mem::Discriminant<Phone> = mem::discriminant(CONSONANT_);
 pub const VOWEL: mem::Discriminant<Phone> = mem::discriminant(VOWEL_);
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 #[derive(serde::Deserialize, serde::Serialize)]
 pub enum Phone {
     Consonant {
@@ -50,12 +50,14 @@ impl Phone {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 #[derive(serde::Deserialize, serde::Serialize)]
 pub struct Phoneme {
     pub symbol: String,
     pub grapheme: String,
-    pub phone: Phone
+    pub phone: Phone,
+    id: slotmap::DefaultKey,
+    id_state: bool
 }
 
 impl Phoneme {
@@ -65,8 +67,23 @@ impl Phoneme {
         Self {
             symbol: symbol.to_string(),
             grapheme: String::new(),
-            phone
+            phone,
+            id: slotmap::DefaultKey::default(),
+            id_state: false
         }
+    }
+
+    pub fn set_id(&mut self, id: slotmap::DefaultKey) {
+        if self.id_state { panic!(); }
+
+        self.id = id;
+        self.id_state = true;
+    }
+
+    pub fn id(&self) -> slotmap::DefaultKey {
+        if !self.id_state { panic!(); }
+
+        self.id
     }
 }
 
@@ -166,8 +183,8 @@ impl<'de, A, B, C> serde::Deserialize<'de> for PhonemeQuality<A, B, C>
     }
 }
 
-// TODO: There must be a better way to implement all of these into's
-// Maybe by having an intermediate type that implements into for both A and &[A]
+// TODO: There must be a better way to implement all of these Into's
+// Maybe by having an intermediate type that implements Into for both A and &[A]
 
 impl<A, B, C> From<(A, B, C)> for PhonemeQuality<A, B, C> 
     where A: Category, B: Category, C: Category {

@@ -105,11 +105,21 @@ impl Pane for LanguagePane {
             .size(Size::remainder())
             .horizontal(|mut strip| {
                 strip.cell(|ui| {
-                    consonants.display(&state.phonemes, ui);
+                    consonants.display(
+                        state.invalid.clone(), 
+                        state.space.clone(), 
+                        &state.phonemes, 
+                        ui
+                    );
                 });
 
                 strip.cell(|ui| {
-                    vowels.display(&state.phonemes, ui);
+                    vowels.display(
+                        state.invalid.clone(), 
+                        state.space.clone(), 
+                        &state.phonemes, 
+                        ui
+                    );
                 })
             });        
     }

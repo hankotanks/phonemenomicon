@@ -1,6 +1,6 @@
 use slotmap::SlotMap;
 
-use crate::types::{Phoneme, Language, Alphabet, PhonemeQuality};
+use crate::types::{Phoneme, Language, Alphabet, PhonemeQuality, Phone};
 use crate::types::category;
 
 #[allow(unused_imports)]
@@ -11,8 +11,8 @@ pub struct State {
     pub phonemes: SlotMap<slotmap::DefaultKey, Phoneme>,
     pub inventory: Language,
     pub ipa: Language,
-    pub invalid: String,
-    pub space: String,
+    pub invalid: Phoneme,
+    pub space: Phoneme,
 }
 
 impl Default for State {
@@ -27,8 +27,8 @@ impl Default for State {
             phonemes,
             inventory: Language::default(),
             ipa,
-            invalid: String::from("0"),
-            space: String::from(" ")
+            invalid: Phoneme::new("0", Phone::consonant()),
+            space: Phoneme::new(" ", Phone::consonant())
         }
     }
 }

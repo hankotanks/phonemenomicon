@@ -141,6 +141,14 @@ pub fn add_symbol_to_alphabet<'a, A, B, C>(
     };
 
     let phoneme = Phoneme::new(symbol, phone);
+    
+    // First, get the id
+    let id = phonemes.insert(phoneme);
 
-    alphabet.add_phoneme(phonemes.insert(phoneme), quality.into());
+    // Then make sure the Phoneme has it
+    phonemes[id].set_id(id);
+
+    // Lastly, add the Phoneme to the Alphabet
+    alphabet.add_phoneme(id, quality.into());
+
 }
