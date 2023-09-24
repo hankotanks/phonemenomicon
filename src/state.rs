@@ -14,7 +14,7 @@ pub struct State {
     pub ipa: Language,
     pub invalid: Phoneme,
     pub space: Phoneme,
-    
+
     #[serde(skip)]
     pub phoneme_buffer: Option<(slotmap::DefaultKey, LanguagePaneRole)>
 }
@@ -145,18 +145,18 @@ fn init_ipa(phonemes: &mut SlotMap<slotmap::DefaultKey, Phoneme>) -> Language {
         add("h", (Fricative, Glottal, Voiceless).into());
         add("ɦ", (Fricative, Glottal, Voiced).into());
 
-        add("ɬ", (LateralFricative, &[Dental, Alveolar][..], Voiceless).into());
-        add("ɮ", (LateralFricative, &[Alveolar, Post][..], Voiced).into());
+        add("ɬ", (LatFricative, &[Dental, Alveolar][..], Voiceless).into());
+        add("ɮ", (LatFricative, &[Alveolar, Post][..], Voiced).into());
         add("ʋ", (Approximant, Labiodental, Voiced).into());
         add("ɹ", (Approximant, &[Alveolar, Post][..], Voiced).into());
         add("ɻ", (Approximant, Retroflex, Voiced).into());
         add("j", (Approximant, Palatal, Voiced).into());
         add("ɰ", (Approximant, Velar, Voiced).into());
 
-        add("l", (LateralApproximant, &[Alveolar, Post][..], Voiced).into());
-        add("ɭ", (LateralApproximant, Retroflex, Voiced).into());
-        add("ʎ", (LateralApproximant, Palatal, Voiced).into());
-        add("ʟ", (LateralApproximant, Velar, Voiced).into());
+        add("l", (LatApproximant, &[Alveolar, Post][..], Voiced).into());
+        add("ɭ", (LatApproximant, Retroflex, Voiced).into());
+        add("ʎ", (LatApproximant, Palatal, Voiced).into());
+        add("ʟ", (LatApproximant, Velar, Voiced).into());
     }    
 
     Language { vowels, consonants }

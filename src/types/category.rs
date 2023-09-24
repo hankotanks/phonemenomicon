@@ -41,9 +41,9 @@ pub enum Articulation {
     Trill,
     Flap,
     Fricative,
-    LateralFricative,
+    LatFricative,
     Approximant,
-    LateralApproximant
+    LatApproximant
 }
 
 impl fmt::Display for Articulation {
@@ -53,11 +53,11 @@ impl fmt::Display for Articulation {
             Plosive => "Plosive",
             Nasal => "Nasal",
             Trill => "Trill",
-            Flap => "Tap",
+            Flap => "Flap (Tap)",
             Fricative => "Fricative",
-            LateralFricative => "Lateral Fricative",
+            LatFricative => "Lat. Fricative",
             Approximant => "Approximant",
-            LateralApproximant => "Lateral Approximant"
+            LatApproximant => "Lat. Approximant"
         })
     }
 }
@@ -89,7 +89,7 @@ impl fmt::Display for Region {
             Labiodental => "Labiodental",
             Dental => "Dental",
             Alveolar => "Alveolar",
-            Post => "Post Alveolar",
+            Post => "Post",
             Retroflex => "Retroflex",
             Palatal => "Palatal",
             Velar => "Velar",
@@ -124,7 +124,7 @@ impl fmt::Display for Voicing {
         use Voicing::*;
         write!(f, "{}", match self {
             Voiced => "Voiced",
-            Voiceless => "Unvoiced"
+            Voiceless => "Voiceless"
         })
     }
 }
