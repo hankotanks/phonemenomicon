@@ -1,15 +1,27 @@
 use slotmap::SlotMap;
 
-use crate::types::{Phoneme, PhonemeQuality, Alphabet};
+use crate::types::{Phoneme, PhonemeQuality, Alphabet, Phone};
 use crate::types::category::{Outer, Inner, Pair, Articulation, Region, Voicing, Constriction, Place, Rounding};
 
 pub type Modifier<A, B, C> = (PhonemeQuality<A, B, C>, String, String);
 
 pub struct Diacritics<A: Outer<B, C>, B: Inner<C>, C: Pair> {
+    pub category: &'static str,
     pub contents: Vec<Modifier<A, B, C>>,
     pub change_state: fn(&mut Phoneme, &str),
+    pub behavior: DiacriticsBehavior,
     pub prepend_blank: bool,
-    pub submenu_visible: bool
+}
+
+pub enum DiacriticsBehavior {
+    Single {
+        contains: fn(&Phoneme) -> bool,
+        remove: fn(&mut Phoneme),
+    },
+    Multiple {
+        contains: fn(&Phoneme, symbol: &str) -> bool,
+        remove: fn(&mut Phoneme, symbol: &str)
+    }
 }
 
 pub fn modifiers_consonants(
@@ -54,11 +66,27 @@ pub fn modifiers_consonants(
         }
 
         diacritics.push(Diacritics { 
+            category: "Affrication",
             contents, 
             change_state: |phoneme: &mut Phoneme, symbol: &str| 
                 phoneme.phone.affricate(symbol), 
-            prepend_blank: false, 
-            submenu_visible: true
+            behavior: DiacriticsBehavior::Single { 
+                contains: |phoneme: &Phoneme| -> bool {
+                    if let Phone::Consonant { affricated, .. } = &phoneme.phone {
+                        return affricated.is_some();
+                    } else {
+                        unreachable!();
+                    }
+                }, 
+                remove: |phoneme: &mut Phoneme| {
+                    if let Phone::Consonant {ref mut affricated, .. } = phoneme.phone {
+                        let _ = affricated.take();
+                    } else {
+                        unreachable!();
+                    }
+                } 
+            },
+            prepend_blank: false
         });
     }
 
