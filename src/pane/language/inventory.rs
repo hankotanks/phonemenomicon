@@ -1,5 +1,5 @@
 use std::collections::{HashSet, HashMap};
-use std::ops;
+use std::{ops, mem};
 
 use egui_extras::{StripBuilder, Size, Strip};
 use enum_iterator::{cardinality, all};
@@ -7,8 +7,9 @@ use slotmap::SlotMap;
 
 use crate::app::FONT_ID;
 use crate::pane::Pane;
-use crate::types::{Alphabet, Phoneme, PhonemeQuality};
-use crate::types::category::{Outer, Inner, Pair, CategoryColor};
+use crate::pane::language::context::{modifiers_consonants, self};
+use crate::types::{Alphabet, Phoneme, PhonemeQuality, CONSONANT, VOWEL, Language};
+use crate::types::category::{Outer, Inner, Pair, CategoryColor, Articulation, Region, Voicing};
 use crate::pane::language::LanguagePaneRole;
 
 fn cell_color<A: Outer<B, C>, B: Inner<C>, C: Pair + CategoryColor>(
@@ -38,7 +39,24 @@ fn cell_color<A: Outer<B, C>, B: Inner<C>, C: Pair + CategoryColor>(
 fn cell_context<A: Outer<B, C>, B: Inner<C>, C: Pair>(
     ui: &mut egui::Ui,
     inventory: &Alphabet<A, B, C>,
+    ipa: &Language,
+    phonemes: &mut SlotMap<slotmap::DefaultKey, Phoneme>,
     phoneme: Phoneme) {
+
+    if mem::discriminant(&phoneme.phone) == CONSONANT {
+        let inventory = unsafe {
+            mem::transmute::<&Alphabet<A, B, C>, &Alphabet<Articulation, Region, Voicing>>(inventory)
+        };
+
+        for diacritics in modifiers_consonants(phonemes, &ipa.consonants, 
+            inventory.get_quality(phoneme.id()).unwrap()) {
+            context::diacritics_display(ui, diacritics, &mut phonemes[phoneme.id()]);
+        }
+    } else if mem::discriminant(&phoneme.phone) == VOWEL {
+        todo!("Implement vowel context menu.")
+    } else {
+        unreachable!();
+    }
 
     todo!("Need to implement inventory context menu.");
 }
@@ -46,6 +64,8 @@ fn cell_context<A: Outer<B, C>, B: Inner<C>, C: Pair>(
 fn cell_populated<A: Outer<B, C>, B: Inner<C>, C: Pair + CategoryColor>(
     ui: &mut egui::Ui,
     role: &mut InventoryPaneRole<'_, '_, A, B, C>,
+    ipa: &Language, 
+    phonemes: &mut SlotMap<slotmap::DefaultKey, Phoneme>,
     phoneme_buffer: &mut Option<(slotmap::DefaultKey, LanguagePaneRole)>,
     phoneme: Phoneme) {
 
@@ -97,7 +117,7 @@ fn cell_populated<A: Outer<B, C>, B: Inner<C>, C: Pair + CategoryColor>(
                 .wrap(false);
 
             let response = ui.add(button).context_menu(|ui| {
-                cell_context(ui, inventory, phoneme.clone());
+                cell_context::<A, B, C>(ui, inventory, ipa, phonemes, phoneme.clone());
             });
 
             (response, LanguagePaneRole::Inventory)
@@ -114,12 +134,14 @@ fn cell_populated<A: Outer<B, C>, B: Inner<C>, C: Pair + CategoryColor>(
 fn cell<A: Outer<B, C>, B: Inner<C>, C: Pair + CategoryColor>(
     strip: &mut Strip<'_, '_>, 
     role: &mut InventoryPaneRole<'_, '_, A, B, C>,
+    ipa: &Language,
+    phonemes: &mut SlotMap<slotmap::DefaultKey, Phoneme>,
     phoneme_buffer: &mut Option<(slotmap::DefaultKey, LanguagePaneRole)>,
     occurrence: Option<Phoneme>) {
     
     match occurrence {
         Some(symbol) => strip.cell(|ui| {
-            cell_populated(ui, role, phoneme_buffer, symbol);
+            cell_populated(ui, role, ipa, phonemes, phoneme_buffer, symbol);
         }),
         None => strip.empty()
     }
@@ -144,11 +166,12 @@ impl<'a, 'b, A, B, C> InventoryPane<'a, 'b, A, B, C>
 
     pub fn display(
         &mut self, 
+        ui: &mut egui::Ui,
         invalid: Phoneme, 
         space: Phoneme, 
-        phonemes: &SlotMap<slotmap::DefaultKey, Phoneme>, 
+        phonemes: &mut SlotMap<slotmap::DefaultKey, Phoneme>, 
         phoneme_buffer: &mut Option<(slotmap::DefaultKey, LanguagePaneRole)>,
-        ui: &mut egui::Ui) {
+        ipa: &Language) {
 
         let original_spacing = ui.style().spacing.clone();
 
@@ -207,7 +230,8 @@ impl<'a, 'b, A, B, C> InventoryPane<'a, 'b, A, B, C>
                             occurrences
                                 .into_iter()
                                 .for_each(|occurrence| {
-                                    cell(&mut strip, &mut self.role, phoneme_buffer, occurrence.0);
+                                    cell(&mut strip, &mut self.role, ipa, 
+                                        phonemes, phoneme_buffer, occurrence.0);
                                 });
                         });
                     });
@@ -227,11 +251,12 @@ impl<'a, 'b, A, B, C> Pane for InventoryPane<'a, 'b, A, B, C>
 
     fn show(&mut self, state: &mut crate::State, ui: &mut egui::Ui) {
         self.display(
+            ui,
             state.invalid.clone(), 
             state.space.clone(), 
-            &state.phonemes,
+            &mut state.phonemes,
             &mut state.phoneme_buffer,
-            ui
+            &state.ipa
         );
     }
 }

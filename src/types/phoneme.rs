@@ -125,6 +125,14 @@ impl Into<egui::RichText> for Phoneme {
 pub struct PhonemeQuality<A, B, C>(pub Rc<[A]>, pub Rc<[B]>, pub Rc<[C]>)
     where A: Category, B: Category, C: Category;
 
+impl<A, B, C> PhonemeQuality<A, B, C> 
+    where A: Category, B: Category, C: Category {
+
+    pub fn blank() -> Self {
+        (&[][..], &[][..], &[][..]).into()
+    }
+}
+
 impl<A, B, C> IntoIterator for PhonemeQuality<A, B, C>
     where A: Category, B: Category, C: Category {
 

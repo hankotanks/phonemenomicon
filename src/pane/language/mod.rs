@@ -107,21 +107,23 @@ impl Pane for LanguagePane {
             .horizontal(|mut strip| {
                 strip.cell(|ui| {
                     consonants.display(
+                        ui,
                         state.invalid.clone(), 
                         state.space.clone(), 
-                        &state.phonemes, 
+                        &mut state.phonemes, 
                         &mut state.phoneme_buffer,
-                        ui
+                        &state.ipa
                     );
                 });
 
                 strip.cell(|ui| {
                     vowels.display(
+                        ui,
                         state.invalid.clone(), 
                         state.space.clone(), 
-                        &state.phonemes, 
+                        &mut state.phonemes, 
                         &mut state.phoneme_buffer,
-                        ui
+                        &state.ipa
                     );
                 })
             });        
