@@ -1,7 +1,11 @@
+use std::collections::HashSet;
+
+use enum_iterator::all;
 use slotmap::SlotMap;
 
 use crate::types::{Phoneme, PhonemeQuality, Alphabet, Phone};
-use crate::types::category::{Outer, Inner, Pair, Articulation, Region, Voicing, Constriction, Place, Rounding};
+use crate::types::category::{Outer, Inner, Pair, Category};
+use crate::types::category::{Articulation, Region, Voicing, Constriction, Place, Rounding};
 
 pub type Modifier<A, B, C> = (PhonemeQuality<A, B, C>, String, String);
 
@@ -24,6 +28,25 @@ pub enum DiacriticsBehavior {
     }
 }
 
+fn excl<T: Category>(excluding: &[T]) -> Vec<T> {
+
+    let mut collection: HashSet<T> = HashSet::from_iter(all::<T>());
+
+    for excluding in excluding.iter() {
+        collection.remove(excluding);
+    }
+    
+    collection.into_iter().collect::<Vec<_>>()
+}
+
+fn trans<A: Category, B: Category, C: Category>(
+    restriction: impl Into<PhonemeQuality<A, B, C>>, 
+    symbol: &str, 
+    desc: &str) -> Modifier<A, B, C> {
+
+    (restriction.into(), String::from(symbol), String::from(desc))
+}
+
 pub fn modifiers_consonants(
     phonemes: &SlotMap<slotmap::DefaultKey, Phoneme>,
     ipa: &Alphabet<Articulation, Region, Voicing>,
@@ -32,12 +55,13 @@ pub fn modifiers_consonants(
 
     let mut diacritics = Vec::new();
 
+    // AFFRICATES
     if quality.0.contains(&Articulation::Plosive) {
         let mut contents = Vec::new();
 
         let query: PhonemeQuality<Articulation, Region, Voicing> = (
             &[Articulation::Fricative, Articulation::LatFricative][..],
-            &[Region::Alveolar][..],
+            &[][..],
             quality.2[0]
         ).into();
 
@@ -89,6 +113,84 @@ pub fn modifiers_consonants(
             prepend_blank: false
         });
     }
+
+    // REGIONAL LEAN
+    diacritics.push(Diacritics {
+        category: "Regional Lean",
+        contents: {
+            use Region::*;
+
+            vec![
+                trans((&[][..], &[][..], &[][..]), "ʰ", "Aspirated"),
+                trans((&[][..], excl(&[Bilabial, Labiodental]).as_slice(), &[][..]), "ʷ", "Labialized"),
+                trans((&[][..], excl(&[Palatal]).as_slice(), &[][..]), "ʲ", "Palatalized"),
+                trans((&[][..], excl(&[Velar]).as_slice(), &[][..]), "ˠ", "Velarized"),
+                trans((&[][..], excl(&[Pharyngeal]).as_slice(), &[][..]), "ˤ", "Pharyngealized"),
+                trans((&[][..], excl(&[Glottal]).as_slice(), &[][..]), "ˀ", "Glottalized"),
+                trans((&[][..], &[][..], &[][..]), "ⁿ", "Nasal Release"),
+                trans((&[][..], &[][..], &[][..]), "ˡ", "Lateral Release")
+            ]
+        },
+        change_state: |phoneme: &mut Phoneme, symbol: &str|
+            phoneme.phone.regionalize(symbol),
+        behavior: DiacriticsBehavior::Single { 
+            contains: |phoneme: &Phoneme| -> bool {
+                if let Phone::Consonant { regionalized, .. } = &phoneme.phone {
+                    return regionalized.is_some();
+                } else {
+                    unreachable!();
+                }
+            }, 
+            remove: |phoneme: &mut Phoneme| {
+                if let Phone::Consonant {ref mut regionalized, .. } = phoneme.phone {
+                    let _ = regionalized.take();
+                } else {
+                    unreachable!();
+                }
+            } 
+        },
+        prepend_blank: true,
+    });
+
+    // CONSONANT DIACRITICS
+    diacritics.push(Diacritics { 
+        category: "Quality", 
+        contents: {
+            use Voicing::*;
+            use Region::*;
+            use Articulation::*;
+
+            vec![
+                trans((&[][..], &[][..], &[Voiced][..]), "\u{030A}", "Voiceless"),
+                trans((&[][..], &[][..], &[Voiceless][..]), "\u{032C}", "Voiced"),
+                trans((&[][..], &[][..], &[][..]), "\u{031F}", "Advanced"),
+                trans((&[][..], &[][..], &[][..]), "\u{0320}", "Retracted"),
+                trans((&[][..], &[][..], &[][..]), "\u{0324}", "Breathy"),
+                trans((&[][..], &[][..], &[][..]), "\u{0330}", "Creaky"),
+                trans((&[][..], &[][..], &[][..]), "\u{033C}", "Linguolabial"),
+                trans((&[][..], excl(&[Velar, Pharyngeal][..]).as_slice(), &[][..]), 
+                    "̴", "Velarized or Pharyngealized"),
+                trans((&[][..], &[][..], &[][..]), "\u{031D}", "Raised"),
+                trans((&[][..], &[][..], &[][..]), "\u{031E}", "Lowered"),
+                trans((&[][..], excl(&[Dental][..]).as_slice(), &[][..]), 
+                    "\u{032A}", "Dental"),
+                trans((&[][..], &[][..], &[][..]), "\u{033A}", "Apical"),
+                trans((&[][..], &[][..], &[][..]), "\u{033B}", "Laminal"),
+                trans((Plosive, &[][..], &[][..]), "\u{033A}", "Applosive"),
+                trans((excl(&[Plosive, Fricative, LatFricative][..]).as_slice(), &[][..], &[][..]), 
+                    "\u{033B}", "Syllabic")
+            ]
+        }, 
+        change_state: |phoneme: &mut Phoneme, symbol: &str| 
+            phoneme.add_diacritic(symbol), 
+        behavior: DiacriticsBehavior::Multiple { 
+            contains: |phoneme: &Phoneme, symbol: &str| 
+                format!("{}", phoneme).contains(symbol), 
+            remove: |phoneme: &mut Phoneme, symbol: &str|
+                phoneme.symbol.remove_matches(symbol)
+        }, 
+        prepend_blank: true 
+    });
 
     diacritics.into_iter()
 }

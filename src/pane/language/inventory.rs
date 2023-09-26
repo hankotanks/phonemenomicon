@@ -7,9 +7,10 @@ use slotmap::SlotMap;
 
 use crate::app::FONT_ID;
 use crate::pane::Pane;
-use crate::pane::language::context::{modifiers_consonants, self};
+use crate::pane::language::context;
 use crate::types::{Alphabet, Phoneme, PhonemeQuality, CONSONANT, VOWEL, Language};
-use crate::types::category::{Outer, Inner, Pair, CategoryColor, Articulation, Region, Voicing};
+use crate::types::category::{Outer, Inner, Pair, CategoryColor};
+use crate::types::category::{Articulation, Region, Voicing, Constriction, Place, Rounding};
 use crate::pane::language::LanguagePaneRole;
 
 fn cell_color<A: Outer<B, C>, B: Inner<C>, C: Pair + CategoryColor>(
@@ -45,20 +46,33 @@ fn cell_context<A: Outer<B, C>, B: Inner<C>, C: Pair>(
 
     if mem::discriminant(&phoneme.phone) == CONSONANT {
         let inventory = unsafe {
-            mem::transmute::<&Alphabet<A, B, C>, &Alphabet<Articulation, Region, Voicing>>(inventory)
+            type Dst = Alphabet<Articulation, Region, Voicing>;
+            mem::transmute::<&Alphabet<A, B, C>, &Dst>(inventory)
         };
 
-        for diacritics in modifiers_consonants(phonemes, &ipa.consonants, 
-            inventory.get_quality(phoneme.id()).unwrap()) {
-            context::diacritics_display(ui, diacritics, &mut phonemes[phoneme.id()]);
+        let quality = inventory.get_quality(phoneme.id()).unwrap();
+        for diacritics in context::diacritics::modifiers_consonants(
+            phonemes, &ipa.consonants, quality) {
+            
+            let phoneme = &mut phonemes[phoneme.id()];
+            context::diacritics_display(ui, diacritics, inventory, phoneme);
         }
     } else if mem::discriminant(&phoneme.phone) == VOWEL {
-        todo!("Implement vowel context menu.")
+        let inventory = unsafe {
+            type Dst = Alphabet<Constriction, Place, Rounding>;
+            mem::transmute::<&Alphabet<A, B, C>, &Dst>(inventory)
+        };
+
+        let quality = inventory.get_quality(phoneme.id()).unwrap();
+        for diacritics in context::diacritics::modifiers_vowels(
+            phonemes, &ipa.vowels, quality) {
+            
+            let phoneme = &mut phonemes[phoneme.id()];
+            context::diacritics_display(ui, diacritics, inventory, phoneme);
+        }
     } else {
         unreachable!();
     }
-
-    todo!("Need to implement inventory context menu.");
 }
 
 fn cell_populated<A: Outer<B, C>, B: Inner<C>, C: Pair + CategoryColor>(
@@ -82,7 +96,7 @@ fn cell_populated<A: Outer<B, C>, B: Inner<C>, C: Pair + CategoryColor>(
 
     #[allow(unused_variables)]
     let (response, source) = match role {
-        InventoryPaneRole::Source { inventory, phonemes } => {
+        InventoryPaneRole::Source { inventory, phonemes: source } => {
             let button_content: egui::RichText = phoneme.clone().into();
             let button = egui::Button::new(button_content)
                 .fill(egui::Color32::TRANSPARENT)
@@ -93,9 +107,18 @@ fn cell_populated<A: Outer<B, C>, B: Inner<C>, C: Pair + CategoryColor>(
 
             if response.clicked() {
                 // TODO: I think this unwrap is safe, should double check
-                let quality = phonemes.get_quality(phoneme.id()).unwrap();
+                let quality = source.get_quality(phoneme.id()).unwrap();
 
-                inventory.add_phoneme(phoneme.id(), quality);
+                let phoneme = Phoneme::new(
+                    String::from(phoneme.symbol.as_str()), 
+                    phoneme.phone.clone()
+                );
+
+                let id = phonemes.insert(phoneme);
+
+                phonemes[id].set_id(id);
+
+                inventory.add_phoneme(id, quality);
             }
 
             (response, LanguagePaneRole::Ipa)
