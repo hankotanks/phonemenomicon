@@ -29,7 +29,6 @@ pub enum DiacriticsBehavior {
 }
 
 fn excl<T: Category>(excluding: &[T]) -> Vec<T> {
-
     let mut collection: HashSet<T> = HashSet::from_iter(all::<T>());
 
     for excluding in excluding.iter() {
@@ -201,7 +200,38 @@ pub fn modifiers_vowels(
     ipa: &Alphabet<Constriction, Place, Rounding>,
     quality: PhonemeQuality<Constriction, Place, Rounding>
 ) -> impl Iterator<Item = Diacritics<Constriction, Place, Rounding>> {
-    let diacritics = Vec::new();
+    let mut diacritics = Vec::new();
+
+    diacritics.push(Diacritics { 
+        category: "Quality", 
+        contents: {
+            use Constriction::*;
+            use Place::*;
+            use Rounding::*;
+            
+            vec![
+                trans((&[][..], &[][..], &[Unrounded][..]), "̹", "Rounded"),
+                trans((&[][..], &[][..], &[Rounded][..]), "̹", "Rounded"),
+                trans((&[][..], excl(&[Central]).as_slice(), &[][..]), "\u{0308}", "Centralized"),
+                trans((excl(&[Mid]).as_slice(), excl(&[Central]).as_slice(), &[][..]), 
+                    "\u{033D}", "Mid-Centralized"), // TODO: This is problematic, should show for all but ə
+                trans((&[][..], &[][..], &[][..]), "\u{032F}", "Non-Syllabic"),
+                trans((&[][..], &[][..], &[][..]), "\u{0303}", "Nasal"),
+                trans((&[][..], &[][..], &[][..]), "\u{0318}", "Advanced Tongue Root"),
+                trans((&[][..], &[][..], &[][..]), "\u{0319}", "Retracted Tongue Root"),
+                trans((&[][..], &[][..], &[][..]), "˞", "R-Colored")
+            ]
+        }, 
+        change_state: |phoneme: &mut Phoneme, symbol: &str|
+            phoneme.add_diacritic(symbol), 
+        behavior: DiacriticsBehavior::Multiple { 
+            contains: |phoneme: &Phoneme, symbol: &str| 
+                format!("{}", phoneme).contains(symbol), 
+            remove: |phoneme: &mut Phoneme, symbol: &str|
+                phoneme.symbol.remove_matches(symbol)
+        }, 
+        prepend_blank: true 
+    });
 
     diacritics.into_iter()
 }

@@ -68,11 +68,11 @@ impl Pane for LanguagePane {
         let (mut consonants, mut vowels) = match self.role {
             LanguagePaneRole::Inventory => {
                 let consonants = inventory::InventoryPane {
-                    role: inventory::InventoryPaneRole::Display { inventory: &state.inventory.consonants }
+                    role: inventory::InventoryPaneRole::Display { inventory: &mut state.inventory.consonants }
                 };
 
                 let vowels = inventory::InventoryPane {
-                    role: inventory::InventoryPaneRole::Display { inventory: &state.inventory.vowels }
+                    role: inventory::InventoryPaneRole::Display { inventory: &mut state.inventory.vowels }
                 };
 
                 (consonants, vowels)

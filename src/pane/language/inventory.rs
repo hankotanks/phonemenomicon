@@ -39,7 +39,7 @@ fn cell_color<A: Outer<B, C>, B: Inner<C>, C: Pair + CategoryColor>(
 #[allow(unused_variables)]
 fn cell_context<A: Outer<B, C>, B: Inner<C>, C: Pair>(
     ui: &mut egui::Ui,
-    inventory: &Alphabet<A, B, C>,
+    inventory: &mut Alphabet<A, B, C>,
     ipa: &Language,
     phonemes: &mut SlotMap<slotmap::DefaultKey, Phoneme>,
     phoneme: Phoneme) {
@@ -73,6 +73,16 @@ fn cell_context<A: Outer<B, C>, B: Inner<C>, C: Pair>(
     } else {
         unreachable!();
     }
+
+    let content = egui::RichText::new("Remove Phoneme").italics();
+
+    if ui.button(content).clicked() {
+        phonemes.remove(phoneme.id());
+
+        inventory.remove_phoneme(phoneme.id());
+
+        ui.close_menu();
+    }
 }
 
 fn cell_populated<A: Outer<B, C>, B: Inner<C>, C: Pair + CategoryColor>(
@@ -83,7 +93,7 @@ fn cell_populated<A: Outer<B, C>, B: Inner<C>, C: Pair + CategoryColor>(
     phoneme_buffer: &mut Option<(slotmap::DefaultKey, LanguagePaneRole)>,
     phoneme: Phoneme) {
 
-    let inventory = match role {
+    let inventory: &Alphabet<A, B, C> = match role {
         InventoryPaneRole::Source { phonemes, .. } => phonemes,
         InventoryPaneRole::Display { inventory } => inventory,
     };
@@ -177,7 +187,7 @@ pub enum InventoryPaneRole<'a: 'b, 'b: 'a, A: Outer<B, C>, B: Inner<C>, C: Pair>
         phonemes: &'b Alphabet<A, B, C>
     },
     // Reads from inventory
-    Display { inventory: &'a Alphabet<A, B, C> }
+    Display { inventory: &'a mut Alphabet<A, B, C> }
 }
 
 pub struct InventoryPane<'a, 'b, A: Outer<B, C>, B: Inner<C>, C: Pair> {
@@ -226,7 +236,7 @@ impl<'a, 'b, A, B, C> InventoryPane<'a, 'b, A, B, C>
 
                 for a in all::<A>() {
                     let occurrences = {
-                        let inventory = match &self.role {
+                        let inventory: &Alphabet<A, B, C> = match &self.role {
                             InventoryPaneRole::Source { phonemes, .. } => phonemes,
                             InventoryPaneRole::Display { inventory } => inventory,
                         };

@@ -71,6 +71,18 @@ impl<A, B, C> Alphabet<A, B, C>
         self.quality.insert(id, quality);
     }
 
+    pub fn remove_phoneme(&mut self, id: DefaultKey) {
+        if let Some(quality) = self.get_quality(id.clone()) {
+            for (a, b, c) in quality.into_iter() {
+                self.query[a][b][c] = None;
+            }
+
+            self.quality.remove(&id);
+        } else {
+            panic!();
+        }
+    }
+
     pub fn get(&self, query: (A, B, C)) -> Option<DefaultKey> {
         let (a, b, c) = query;
 

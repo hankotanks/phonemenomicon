@@ -114,7 +114,6 @@ impl App {
             }
         }
         
-
         if let Some(storage) = cc.storage {
             return eframe::get_value(storage, eframe::APP_KEY)
                 .unwrap_or_default();
