@@ -98,7 +98,7 @@ pub fn diacritics_display<A, B, C>(
                 });
             }
         },
-        diacritics::DiacriticsBehavior::Multiple { contains, remove } => {
+        diacritics::DiacriticsBehavior::Multiple { .. } => {
             ui.menu_button(diacritics.category, |ui| {
                 show_rows(ui, diacritics, inventory, phoneme);
             });

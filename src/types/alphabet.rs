@@ -132,6 +132,15 @@ impl<A, B, C> Alphabet<A, B, C>
 
         quality.into_iter().any(|item| restrictions.contains(&item))
     }
+
+    pub fn phonemes(&self) -> impl Iterator<Item = DefaultKey> + '_ {
+        self.quality.keys().cloned()
+    }
+
+    pub fn phoneme_qualities(&self) -> impl Iterator<Item = (DefaultKey, PhonemeQuality<A, B, C>)> + '_ {
+        self.quality.iter().map(|(id, quality)| 
+            (id.clone(), quality.clone()))
+    }
 }
 
 pub fn add_symbol_to_alphabet<'a, A, B, C>(

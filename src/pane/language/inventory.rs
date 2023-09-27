@@ -8,33 +8,11 @@ use slotmap::SlotMap;
 use crate::app::FONT_ID;
 use crate::pane::Pane;
 use crate::pane::language::context;
-use crate::types::{Alphabet, Phoneme, PhonemeQuality, CONSONANT, VOWEL, Language};
+use crate::types::{Alphabet, Phoneme, CONSONANT, VOWEL, Language};
 use crate::types::category::{Outer, Inner, Pair, CategoryColor};
 use crate::types::category::{Articulation, Region, Voicing, Constriction, Place, Rounding};
 use crate::pane::language::LanguagePaneRole;
-
-fn cell_color<A: Outer<B, C>, B: Inner<C>, C: Pair + CategoryColor>(
-    ui: &egui::Ui,
-    quality: Option<PhonemeQuality<A, B, C>>) -> egui::Color32 {
-
-    let background = ui.visuals().window_fill;
-
-    match quality {
-        Some(quality) => {
-            let PhonemeQuality(_, _, c) = quality;
-
-            if c.len() > 1 {
-                egui::Color32::LIGHT_GRAY
-            } else {
-                use egui::Rgba;
-
-                let color = c[0].as_color();
-                egui::lerp(Rgba::from(color)..=Rgba::from(background), 0.6).into()
-            }
-        },
-        None => background
-    }
-}
+use crate::pane::util;
 
 #[allow(unused_variables)]
 fn cell_context<A: Outer<B, C>, B: Inner<C>, C: Pair>(
@@ -102,7 +80,7 @@ fn cell_populated<A: Outer<B, C>, B: Inner<C>, C: Pair + CategoryColor>(
 
     ui.painter().rect_filled(
         ui.available_rect_before_wrap(), 
-        0., cell_color(ui, quality));
+        0., util::cell_color(ui, quality));
 
     #[allow(unused_variables)]
     let (response, source) = match role {

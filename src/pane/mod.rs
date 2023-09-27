@@ -3,6 +3,8 @@ mod romanization;
 mod lexicon;
 mod sound_change;
 
+pub mod util;
+
 pub use language::LanguagePaneRole;
 
 use language::LanguagePane;
