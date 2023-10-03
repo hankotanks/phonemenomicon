@@ -64,15 +64,18 @@ impl Pane for LanguagePane {
             .min_height(height)
     }
 
-    fn show(&mut self, state: &mut crate::State, ui: &mut egui::Ui) {        
+    fn show(&mut self, state: &mut crate::State, ui: &mut egui::Ui) {    
+        let inventory = &mut state.dialects[state.inventory];    
         let (mut consonants, mut vowels) = match self.role {
             LanguagePaneRole::Inventory => {
                 let consonants = inventory::InventoryPane {
-                    role: inventory::InventoryPaneRole::Display { inventory: &mut state.inventory.consonants }
+                    role: inventory::InventoryPaneRole::Display { 
+                        inventory: &mut inventory.consonants }
                 };
 
                 let vowels = inventory::InventoryPane {
-                    role: inventory::InventoryPaneRole::Display { inventory: &mut state.inventory.vowels }
+                    role: inventory::InventoryPaneRole::Display { 
+                        inventory: &mut inventory.vowels }
                 };
 
                 (consonants, vowels)
@@ -80,14 +83,14 @@ impl Pane for LanguagePane {
             LanguagePaneRole::Ipa => {
                 let consonants = inventory::InventoryPane {
                     role: inventory::InventoryPaneRole::Source { 
-                        inventory: &mut state.inventory.consonants, 
+                        inventory: &mut inventory.consonants, 
                         phonemes: &state.ipa.consonants 
                     }
                 };
 
                 let vowels = inventory::InventoryPane {
                     role: inventory::InventoryPaneRole::Source { 
-                        inventory: &mut state.inventory.vowels, 
+                        inventory: &mut inventory.vowels, 
                         phonemes: &state.ipa.vowels
                     }
                 };

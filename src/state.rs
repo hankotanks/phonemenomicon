@@ -10,7 +10,8 @@ use crate::types::{add_symbol_to_alphabet, CONSONANT, VOWEL};
 #[derive(serde::Deserialize, serde::Serialize)]
 pub struct State {
     pub phonemes: SlotMap<slotmap::DefaultKey, Phoneme>,
-    pub inventory: Language,
+    pub dialects: SlotMap<slotmap::DefaultKey, Language>,
+    pub inventory: slotmap::DefaultKey,
     pub ipa: Language,
     pub invalid: Phoneme,
     pub space: Phoneme,
@@ -26,13 +27,18 @@ impl Default for State {
     fn default() -> Self {
         let mut phonemes = SlotMap::new();
 
+        let mut dialects = SlotMap::new();
+        
+        let inventory = dialects.insert(Language::default());
+
         // We can't initialize it in the struct form below
         // Because `init_ipa` must insert elements into `phonemes`
         let ipa = init_ipa(&mut phonemes);
 
         Self {
             phonemes,
-            inventory: Language::default(),
+            dialects,
+            inventory,
             ipa,
             invalid: Phoneme::new("0", Phone::consonant()),
             space: Phoneme::new(" ", Phone::consonant()),

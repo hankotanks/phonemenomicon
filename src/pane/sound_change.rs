@@ -48,7 +48,7 @@ impl SoundChangePane {
         phonemes: &SlotMap<DefaultKey, Phoneme>,
         request: SoundChangeRequest,
         buffer: Option<(DefaultKey, &Language)>,
-        buffer_state: &mut bool) {
+        buffer_state: &mut bool) -> egui::Response {
 
         let mut toggle_state = if let Some(inner_request) = self.request {
             inner_request == request
@@ -85,7 +85,7 @@ impl SoundChangePane {
                         util::cell_color(ui, inventory.vowels.get_quality(id))
                     };
         
-                    let content = format!(" {}", phoneme);
+                    let content = format!("{}", phoneme);
                     let content = RichText::new(content)
                         .font(FONT_ID.to_owned())
                         .background_color(egui::Color32::TRANSPARENT);
@@ -95,11 +95,11 @@ impl SoundChangePane {
                     *(rect.bottom_mut()) += ui.style().spacing.item_spacing.y;
         
                     ui.painter().rect_filled(rect, 0., bg_color);
-                    ui.label(content);
-                        
+                    ui.vertical_centered(|ui| {
+                        ui.label(content);
+                    });
                 }
-            })});
-        
+            })})
     }
 }
 
@@ -123,7 +123,7 @@ impl Pane for SoundChangePane {
                     // I never intend to, but it should be noted.
                     let mut status = STATUS.lock();
                     status.clear();
-                    status.push_str("Sound change's source phoneme must be selected from the inventory. Select another phoneme.");
+                    status.push_str("Sound change's source must be selected from the inventory. Select another phoneme.");
 
                     advance = false;
                 }
@@ -158,19 +158,24 @@ impl Pane for SoundChangePane {
                         ui, &state.phonemes,
                         SoundChangeRequest::Src,
                         self.current[SoundChangeRequest::Src].map(|(id, role)| match role {
-                            LanguagePaneRole::Inventory => (id, &state.inventory),
+                            LanguagePaneRole::Inventory => (id, &state.dialects[state.inventory]),
                             LanguagePaneRole::Ipa => (id, &state.ipa),
                         }), &mut state.buffer_state
                     );
         
-                    self.sound_change_field(
+                    let response = self.sound_change_field(
                         ui, &state.phonemes,
                         SoundChangeRequest::Dst,
                         self.current[SoundChangeRequest::Dst].map(|(id, role)| match role {
-                            LanguagePaneRole::Inventory => (id, &state.inventory),
+                            LanguagePaneRole::Inventory => (id, &state.dialects[state.inventory]),
                             LanguagePaneRole::Ipa => (id, &state.ipa),
                         }), &mut state.buffer_state
                     );
+
+                    response.context_menu(|_ui| {
+                        // TODO: Move cell_context to utils
+                        // cell_context::<A, B, C>(ui, inventory, ipa, phonemes, phoneme.clone());
+                    });
                 });
             });
         });

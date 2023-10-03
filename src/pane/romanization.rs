@@ -25,7 +25,7 @@ impl Pane for RomanizationPane {
                         ui.vertical_centered(|ui| {
                             ui.heading("Consonants");
                             show_graphemes(ui, 
-                                &state.inventory.consonants, 
+                                &state.dialects[state.inventory].consonants, 
                                 &mut state.phonemes);
                         });
                     });
@@ -36,7 +36,7 @@ impl Pane for RomanizationPane {
                         ui.vertical_centered(|ui| {
                             ui.heading("Vowels");
                             show_graphemes(ui, 
-                                &state.inventory.vowels, 
+                                &state.dialects[state.inventory].vowels, 
                                 &mut state.phonemes);
                         });
                         
