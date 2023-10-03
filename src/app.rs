@@ -142,9 +142,7 @@ impl eframe::App for App {
         }
 
         egui::TopBottomPanel::bottom(new_id()).show(ctx, |ui| {
-            ui.horizontal(|ui| {
-                ui.label(STATUS.lock().as_str());
-            });
+            ui.label(STATUS.lock().as_str());
         });
     }
 }

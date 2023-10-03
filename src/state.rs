@@ -1,3 +1,4 @@
+use petgraph::stable_graph::StableGraph;
 use slotmap::SlotMap;
 
 use crate::pane::LanguagePaneRole;
@@ -11,7 +12,9 @@ use crate::types::{add_symbol_to_alphabet, CONSONANT, VOWEL};
 pub struct State {
     pub phonemes: SlotMap<slotmap::DefaultKey, Phoneme>,
     pub dialects: SlotMap<slotmap::DefaultKey, Language>,
+    pub language_tree: StableGraph<slotmap::DefaultKey, (), petgraph::Directed>,
     pub inventory: slotmap::DefaultKey,
+    pub root: slotmap::DefaultKey,
     pub ipa: Language,
     pub invalid: Phoneme,
     pub space: Phoneme,
@@ -31,6 +34,10 @@ impl Default for State {
         
         let inventory = dialects.insert(Language::default());
 
+        let mut language_tree = StableGraph::new();
+
+        language_tree.add_node(inventory);
+
         // We can't initialize it in the struct form below
         // Because `init_ipa` must insert elements into `phonemes`
         let ipa = init_ipa(&mut phonemes);
@@ -38,7 +45,9 @@ impl Default for State {
         Self {
             phonemes,
             dialects,
+            language_tree,
             inventory,
+            root: inventory,
             ipa,
             invalid: Phoneme::new("0", Phone::consonant()),
             space: Phoneme::new(" ", Phone::consonant()),

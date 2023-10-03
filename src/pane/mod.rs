@@ -2,6 +2,7 @@ mod language;
 mod romanization;
 mod lexicon;
 mod sound_change;
+mod dialect_view;
 
 pub mod util;
 
@@ -11,6 +12,7 @@ use language::LanguagePane;
 use romanization::RomanizationPane;
 use lexicon::LexiconPane;
 use sound_change::SoundChangePane;
+use dialect_view::DialectPane;
 
 use enum_map::{Enum, EnumMap, enum_map};
 
@@ -22,7 +24,8 @@ pub enum PaneId {
     Ipa,
     Romanization,
     Lexicon,
-    SoundChange
+    SoundChange,
+    Dialects
 }
 
 pub trait Pane {
@@ -50,6 +53,10 @@ pub fn init_panes() -> EnumMap<PaneId, Box<dyn Pane>> {
         },
         PaneId::SoundChange => {
             let temp: Box<dyn Pane> = Box::new(SoundChangePane::new());
+            temp
+        },
+        PaneId::Dialects => {
+            let temp: Box<dyn Pane> = Box::new(DialectPane::new());
             temp
         }
     }
