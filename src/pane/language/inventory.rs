@@ -68,7 +68,8 @@ fn cell_populated<A: Outer<B, C>, B: Inner<C>, C: Pair + CategoryColor>(
     role: &mut InventoryPaneRole<'_, '_, A, B, C>,
     ipa: &Language, 
     phonemes: &mut SlotMap<slotmap::DefaultKey, Phoneme>,
-    phoneme_buffer: &mut Option<(slotmap::DefaultKey, LanguagePaneRole)>,
+    buffer: &mut Option<(slotmap::DefaultKey, LanguagePaneRole)>,
+    buffer_state: bool,
     phoneme: Phoneme) {
 
     let inventory: &Alphabet<A, B, C> = match role {
@@ -93,7 +94,7 @@ fn cell_populated<A: Outer<B, C>, B: Inner<C>, C: Pair + CategoryColor>(
             
             let response = ui.add(button);
 
-            if response.clicked() {
+            if response.clicked() && !buffer_state {
                 // TODO: I think this unwrap is safe, should double check
                 let quality = source.get_quality(phoneme.id()).unwrap();
 
@@ -135,10 +136,8 @@ fn cell_populated<A: Outer<B, C>, B: Inner<C>, C: Pair + CategoryColor>(
         },
     };
 
-    if response.hovered() && ui.input(|input| 
-        input.key_pressed(egui::Key::Space)) {
-
-        let _ = phoneme_buffer.insert((phoneme.id(), source));
+    if response.clicked() && buffer_state {
+        let _ = buffer.insert((phoneme.id(), source));
     }
 }
 
@@ -147,12 +146,13 @@ fn cell<A: Outer<B, C>, B: Inner<C>, C: Pair + CategoryColor>(
     role: &mut InventoryPaneRole<'_, '_, A, B, C>,
     ipa: &Language,
     phonemes: &mut SlotMap<slotmap::DefaultKey, Phoneme>,
-    phoneme_buffer: &mut Option<(slotmap::DefaultKey, LanguagePaneRole)>,
+    buffer: &mut Option<(slotmap::DefaultKey, LanguagePaneRole)>,
+    buffer_state: bool,
     occurrence: Option<Phoneme>) {
     
     match occurrence {
         Some(symbol) => strip.cell(|ui| {
-            cell_populated(ui, role, ipa, phonemes, phoneme_buffer, symbol);
+            cell_populated(ui, role, ipa, phonemes, buffer, buffer_state, symbol);
         }),
         None => strip.empty()
     }
@@ -181,7 +181,8 @@ impl<'a, 'b, A, B, C> InventoryPane<'a, 'b, A, B, C>
         invalid: Phoneme, 
         space: Phoneme, 
         phonemes: &mut SlotMap<slotmap::DefaultKey, Phoneme>, 
-        phoneme_buffer: &mut Option<(slotmap::DefaultKey, LanguagePaneRole)>,
+        buffer: &mut Option<(slotmap::DefaultKey, LanguagePaneRole)>,
+        buffer_state: bool,
         ipa: &Language) {
 
         let original_spacing = ui.style().spacing.clone();
@@ -242,7 +243,7 @@ impl<'a, 'b, A, B, C> InventoryPane<'a, 'b, A, B, C>
                                 .into_iter()
                                 .for_each(|occurrence| {
                                     cell(&mut strip, &mut self.role, ipa, 
-                                        phonemes, phoneme_buffer, occurrence.0);
+                                        phonemes, buffer, buffer_state, occurrence.0);
                                 });
                         });
                     });
@@ -266,7 +267,8 @@ impl<'a, 'b, A, B, C> Pane for InventoryPane<'a, 'b, A, B, C>
             state.invalid.clone(), 
             state.space.clone(), 
             &mut state.phonemes,
-            &mut state.phoneme_buffer,
+            &mut state.buffer,
+            state.buffer_state,
             &state.ipa
         );
     }

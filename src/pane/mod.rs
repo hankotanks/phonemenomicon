@@ -49,7 +49,7 @@ pub fn init_panes() -> EnumMap<PaneId, Box<dyn Pane>> {
             temp
         },
         PaneId::SoundChange => {
-            let temp: Box<dyn Pane> = Box::new(SoundChangePane { most_recent_buffer: None });
+            let temp: Box<dyn Pane> = Box::new(SoundChangePane::new());
             temp
         }
     }

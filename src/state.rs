@@ -16,7 +16,10 @@ pub struct State {
     pub space: Phoneme,
 
     #[serde(skip)]
-    pub phoneme_buffer: Option<(slotmap::DefaultKey, LanguagePaneRole)>
+    pub buffer: Option<(slotmap::DefaultKey, LanguagePaneRole)>,
+
+    #[serde(skip)]
+    pub buffer_state: bool
 }
 
 impl Default for State {
@@ -33,7 +36,8 @@ impl Default for State {
             ipa,
             invalid: Phoneme::new("0", Phone::consonant()),
             space: Phoneme::new(" ", Phone::consonant()),
-            phoneme_buffer: None
+            buffer: None,
+            buffer_state: false
         }
     }
 }

@@ -1,11 +1,16 @@
 use std::{fmt, io};
 
+use egui::mutex::Mutex;
 use enum_map::EnumMap;
 use include_dir::Dir;
 use once_cell::sync::Lazy;
 
 use crate::State;
+use crate::pane::util::new_id;
 use crate::pane::{PaneId, Pane, init_panes};
+
+pub static STATUS: Lazy<Mutex<String>> = Lazy::new(|| 
+    Mutex::new(String::from("")));
 
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)]
@@ -135,5 +140,11 @@ impl eframe::App for App {
                 pane.show(&mut self.state, ui);
             });
         }
+
+        egui::TopBottomPanel::bottom(new_id()).show(ctx, |ui| {
+            ui.horizontal(|ui| {
+                ui.label(STATUS.lock().as_str());
+            });
+        });
     }
 }
