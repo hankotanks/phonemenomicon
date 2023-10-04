@@ -1,4 +1,6 @@
 
+use std::rc;
+
 use crate::types::Alphabet;
 
 use crate::types::category::{
@@ -12,6 +14,7 @@ use crate::types::category::{
 
 #[derive(serde::Deserialize, serde::Serialize)]
 pub struct Language {
+    pub name: rc::Rc<str>,
     pub consonants: Alphabet<Articulation, Region, Voicing>,
     pub vowels: Alphabet<Constriction, Place, Rounding>
 }
@@ -19,6 +22,7 @@ pub struct Language {
 impl Default for Language {
     fn default() -> Self {
         Self { 
+            name: rc::Rc::from("Untitled"),
             consonants: Alphabet::new(), 
             vowels: Alphabet::new()
         }

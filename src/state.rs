@@ -1,4 +1,6 @@
-use petgraph::stable_graph::StableGraph;
+use std::rc;
+
+use petgraph::stable_graph::{StableGraph, NodeIndex};
 use slotmap::SlotMap;
 
 use crate::pane::LanguagePaneRole;
@@ -14,7 +16,7 @@ pub struct State {
     pub dialects: SlotMap<slotmap::DefaultKey, Language>,
     pub language_tree: StableGraph<slotmap::DefaultKey, (), petgraph::Directed>,
     pub inventory: slotmap::DefaultKey,
-    pub root: slotmap::DefaultKey,
+    pub root: NodeIndex<u32>,
     pub ipa: Language,
     pub invalid: Phoneme,
     pub space: Phoneme,
@@ -36,7 +38,7 @@ impl Default for State {
 
         let mut language_tree = StableGraph::new();
 
-        language_tree.add_node(inventory);
+        let root = language_tree.add_node(inventory);
 
         // We can't initialize it in the struct form below
         // Because `init_ipa` must insert elements into `phonemes`
@@ -47,7 +49,7 @@ impl Default for State {
             dialects,
             language_tree,
             inventory,
-            root: inventory,
+            root,
             ipa,
             invalid: Phoneme::new("0", Phone::consonant()),
             space: Phoneme::new(" ", Phone::consonant()),
@@ -178,5 +180,5 @@ fn init_ipa(phonemes: &mut SlotMap<slotmap::DefaultKey, Phoneme>) -> Language {
         add("ʟ", (LatApproximant, Velar, Voiced).into());
     }    
 
-    Language { vowels, consonants }
+    Language { name: rc::Rc::from("IPA"), vowels, consonants }
 }
