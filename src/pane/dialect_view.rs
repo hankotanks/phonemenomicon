@@ -158,7 +158,7 @@ fn show_dialect(
                 Some(child) => {
                     let mut temp = egui::Pos2::default();
                     egui_extras::StripBuilder::new(ui)
-                        .sizes(Size::initial(cell_width).at_least(cell_width), 2)
+                        .sizes(Size::exact(cell_width), 2)
                         .horizontal(|mut strip| {
                             strip.cell(|ui| { 
                                 temp = show_dialect_internal(ui, state, id, renaming, current);
@@ -179,7 +179,7 @@ fn show_dialect(
         for child in neighbors.into_iter().skip(1) {
             strip.cell(|ui| {
                 egui_extras::StripBuilder::new(ui)
-                    .sizes(Size::remainder(), 2)
+                    .sizes(Size::exact(cell_width), 2)
                     .horizontal(|mut strip| {
                         strip.empty();
 
@@ -203,7 +203,7 @@ fn depth(
         return 1;
     }
 
-    let mut max_height = 0;
+    let mut max_height = 1;
     for child in language_tree.neighbors_directed(id, petgraph::Outgoing) {
         max_height = max_height.max(depth(language_tree, child));
     }
