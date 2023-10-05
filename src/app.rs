@@ -1,6 +1,7 @@
 use std::{fmt, io};
 
 use egui::mutex::Mutex;
+use egui_extras::Size;
 use enum_map::EnumMap;
 use include_dir::Dir;
 use once_cell::sync::Lazy;
@@ -140,37 +141,43 @@ impl eframe::App for App {
     }
 
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        egui::TopBottomPanel::top(new_id()).show(ctx, |ui| {
+        egui::TopBottomPanel::top("top-panel").show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
-                if ui.button("Dock Inventory").clicked() {
-                    log::info!("Click");
-                    self.pane_state[PaneId::Inventory] = !self.pane_state[PaneId::Inventory];
-                }
+                ui.menu_button("Dock", |ui| {
+                    for (id, state) in self.pane_state.iter_mut() {
+                        ui.toggle_value(state, format!("{:?}", id));
+                    }
+                });
             });
-            /*
+            
             // TODO: Draw docked panes next to eachother in a horizontal span
             let docked_panes = self.pane_state.
                 iter()
                 .filter_map(|(id, state)| {
                     if *state { Some(id) } else { None }
             });
-
-            ui.horizontal_top(|ui| {
-                for id in docked_panes.into_iter() {
-                    self.panes[id].show(&mut self.state, ui);
-                }
-            });*/
+            
+            egui_extras::StripBuilder::new(ui)
+                .sizes(Size::remainder(), docked_panes.clone().count())
+                .horizontal(|mut strip| {
+                    for id in docked_panes.into_iter() {
+                        strip.cell(|ui| {
+                            self.panes[id].show(false, &mut self.state, ui);
+                        });
+                        
+                    }
+                });
         });
 
         for (id, pane) in self.panes.iter_mut() {
             if !self.pane_state[id] {
                 pane.setup(ctx).show(ctx, |ui| {
-                    pane.show(&mut self.state, ui);
+                    pane.show(true, &mut self.state, ui);
                 });
             }
         }
-
-        egui::TopBottomPanel::bottom(new_id()).show(ctx, |ui| {
+        
+        egui::TopBottomPanel::bottom("bottom-panel").show(ctx, |ui| {
             ui.label(STATUS.lock().as_str());
         });
     }

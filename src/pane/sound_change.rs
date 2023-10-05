@@ -108,7 +108,7 @@ impl Pane for SoundChangePane {
         egui::Window::new("Sound Changes")
     }
 
-    fn show(&mut self, state: &mut crate::State, ui: &mut egui::Ui) {
+    fn show(&mut self, _windowed: bool, state: &mut crate::State, ui: &mut egui::Ui) {
         // Collect from the buffer
         if let Some(request) = self.request {
             if let Some(buffer_contents) = state.buffer.take() {

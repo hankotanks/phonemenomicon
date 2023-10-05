@@ -18,7 +18,7 @@ use enum_map::{Enum, EnumMap, enum_map};
 
 use crate::State;
 
-#[derive(Clone, Copy, Enum)]
+#[derive(Clone, Copy, Enum, Debug)]
 pub enum PaneId {
     Inventory,
     Ipa,
@@ -30,7 +30,7 @@ pub enum PaneId {
 
 pub trait Pane {
     fn setup<'a, 'b: 'a>(&'a mut self, ctx: &egui::Context) -> egui::Window<'b>;
-    fn show(&mut self, state: &mut State, ui: &mut egui::Ui);
+    fn show(&mut self, windowed: bool, state: &mut State, ui: &mut egui::Ui);
 }
 
 pub fn init_panes() -> EnumMap<PaneId, Box<dyn Pane>> {

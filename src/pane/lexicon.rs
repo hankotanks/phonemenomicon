@@ -7,7 +7,7 @@ impl Pane for LexiconPane {
         egui::Window::new("Lexicon")
     }
 
-    fn show(&mut self, _state: &mut crate::State, _ui: &mut egui::Ui) {
+    fn show(&mut self, _windowed: bool, _state: &mut crate::State, _ui: &mut egui::Ui) {
         
     }
 }

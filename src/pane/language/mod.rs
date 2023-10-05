@@ -64,7 +64,7 @@ impl Pane for LanguagePane {
             .min_height(height)
     }
 
-    fn show(&mut self, state: &mut crate::State, ui: &mut egui::Ui) {    
+    fn show(&mut self, windowed: bool, state: &mut crate::State, ui: &mut egui::Ui) {    
         let inventory = &mut state.dialects[state.inventory];    
         let (mut consonants, mut vowels) = match self.role {
             LanguagePaneRole::Inventory => {
@@ -110,6 +110,7 @@ impl Pane for LanguagePane {
             .horizontal(|mut strip| {
                 strip.cell(|ui| {
                     consonants.display(
+                        windowed,
                         ui,
                         state.invalid.clone(), 
                         state.space.clone(), 
@@ -122,6 +123,7 @@ impl Pane for LanguagePane {
 
                 strip.cell(|ui| {
                     vowels.display(
+                        windowed,
                         ui,
                         state.invalid.clone(), 
                         state.space.clone(), 

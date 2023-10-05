@@ -64,6 +64,7 @@ fn cell_context<A: Outer<B, C>, B: Inner<C>, C: Pair>(
 }
 
 fn cell_populated<A: Outer<B, C>, B: Inner<C>, C: Pair + CategoryColor>(
+    windowed: bool,
     ui: &mut egui::Ui,
     role: &mut InventoryPaneRole<'_, '_, A, B, C>,
     ipa: &Language, 
@@ -80,7 +81,13 @@ fn cell_populated<A: Outer<B, C>, B: Inner<C>, C: Pair + CategoryColor>(
     let quality = inventory.get_quality(phoneme.id());
 
     ui.painter().rect_filled(
-        ui.available_rect_before_wrap(), 
+        if windowed { 
+            ui.available_rect_before_wrap() 
+        } else {
+            let mut rect = ui.available_rect_before_wrap();
+            (*rect.bottom_mut()) += ui.style().spacing.item_spacing.y;
+            rect
+        }, 
         0., util::cell_color(ui, quality));
 
     #[allow(unused_variables)]
@@ -142,6 +149,7 @@ fn cell_populated<A: Outer<B, C>, B: Inner<C>, C: Pair + CategoryColor>(
 }
 
 fn cell<A: Outer<B, C>, B: Inner<C>, C: Pair + CategoryColor>(
+    windowed: bool,
     strip: &mut Strip<'_, '_>, 
     role: &mut InventoryPaneRole<'_, '_, A, B, C>,
     ipa: &Language,
@@ -152,7 +160,8 @@ fn cell<A: Outer<B, C>, B: Inner<C>, C: Pair + CategoryColor>(
     
     match occurrence {
         Some(symbol) => strip.cell(|ui| {
-            cell_populated(ui, role, ipa, phonemes, buffer, buffer_state, symbol);
+            cell_populated(windowed, ui, role, 
+                ipa, phonemes, buffer, buffer_state, symbol);
         }),
         None => strip.empty()
     }
@@ -177,6 +186,7 @@ impl<'a, 'b, A, B, C> InventoryPane<'a, 'b, A, B, C>
 
     pub fn display(
         &mut self, 
+        windowed: bool,
         ui: &mut egui::Ui,
         invalid: Phoneme, 
         space: Phoneme, 
@@ -187,19 +197,33 @@ impl<'a, 'b, A, B, C> InventoryPane<'a, 'b, A, B, C>
 
         let original_spacing = ui.style().spacing.clone();
 
-        {
+        if windowed {
             let spacing = &mut ui.style_mut().spacing;
 
             spacing.item_spacing = [0., 0.].into();
             spacing.window_margin = egui::Vec2::from([0., 0.]).into();
+        } else {
+            let spacing = &mut ui.style_mut().spacing;
+
+            spacing.item_spacing.x = 0.;
         }
 
         let cell_column_count = cardinality::<B>() * cardinality::<C>();
 
         let cell_proportion = (cell_column_count as f32).recip();
 
+        let size = if windowed { 
+            Size::remainder()
+        } else {
+            let size = FONT_ID.size;
+            let size = size + ui.style().spacing.button_padding.y * 2.;
+            let size = size + ui.style().spacing.item_spacing.y * 2.;
+
+            Size::exact(size)
+        };
+
         StripBuilder::new(ui)
-            .sizes(Size::remainder(), cardinality::<A>() + 1)
+            .sizes(size, cardinality::<A>() + 1)
             .vertical(|mut strip| {
                 strip.strip(|builder| {
                     builder
@@ -242,7 +266,7 @@ impl<'a, 'b, A, B, C> InventoryPane<'a, 'b, A, B, C>
                             occurrences
                                 .into_iter()
                                 .for_each(|occurrence| {
-                                    cell(&mut strip, &mut self.role, ipa, 
+                                    cell(windowed, &mut strip, &mut self.role, ipa, 
                                         phonemes, buffer, buffer_state, occurrence.0);
                                 });
                         });
@@ -261,8 +285,9 @@ impl<'a, 'b, A, B, C> Pane for InventoryPane<'a, 'b, A, B, C>
         egui::Window::new(egui::RichText::default())
     }
 
-    fn show(&mut self, state: &mut crate::State, ui: &mut egui::Ui) {
+    fn show(&mut self, windowed: bool, state: &mut crate::State, ui: &mut egui::Ui) {
         self.display(
+            windowed,
             ui,
             state.invalid.clone(), 
             state.space.clone(), 

@@ -216,7 +216,7 @@ impl Pane for DialectPane {
         egui::Window::new("Dialects").constrain(true)
     }
 
-    fn show(&mut self, state: &mut crate::State, ui: &mut egui::Ui) {
+    fn show(&mut self, _windowed: bool, state: &mut crate::State, ui: &mut egui::Ui) {
         egui::ScrollArea::horizontal().show(ui, |ui| {
             let depth = depth(&state.language_tree, state.root);
             let cell_width = ui.available_width() / depth as f32;

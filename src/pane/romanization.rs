@@ -16,7 +16,7 @@ impl Pane for RomanizationPane {
         egui::Window::new("Romanization")
     }
 
-    fn show(&mut self, state: &mut crate::State, ui: &mut egui::Ui) {
+    fn show(&mut self, _windowed: bool, state: &mut crate::State, ui: &mut egui::Ui) {
         egui_extras::StripBuilder::new(ui) 
             .sizes(Size::remainder(), 2)
             .horizontal(|mut strip: egui_extras::Strip<'_, '_>| {
