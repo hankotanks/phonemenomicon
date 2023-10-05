@@ -7,7 +7,6 @@ use include_dir::Dir;
 use once_cell::sync::Lazy;
 
 use crate::State;
-use crate::pane::util::new_id;
 use crate::pane::{PaneId, Pane, init_panes};
 
 pub static STATUS: Lazy<Mutex<String>> = Lazy::new(|| 
@@ -145,6 +144,7 @@ impl eframe::App for App {
             egui::menu::bar(ui, |ui| {
                 ui.menu_button("Dock", |ui| {
                     for (id, state) in self.pane_state.iter_mut() {
+                        // TODO: Don't use debug formatter
                         ui.toggle_value(state, format!("{:?}", id));
                     }
                 });
@@ -161,10 +161,29 @@ impl eframe::App for App {
                 .sizes(Size::remainder(), docked_panes.clone().count())
                 .horizontal(|mut strip| {
                     for id in docked_panes.into_iter() {
-                        strip.cell(|ui| {
-                            self.panes[id].show(false, &mut self.state, ui);
+                        strip.cell(|ui| { 
+                            ui.vertical(|ui| {
+                                // TODO: Don't use debug formatter
+                                ui.heading(format!("{:?}", id));
+                                let spacing = ui.style().spacing.item_spacing;
+
+                                let mut frame = egui::Frame::none()
+                                    .stroke(ui.style().visuals.window_stroke());
+                                
+                                let egui::Margin { left, right, top, bottom } = frame.inner_margin;
+
+                                frame.inner_margin = egui::Margin {
+                                    left: left + spacing.x,
+                                    right: right + spacing.x,
+                                    top: top + spacing.y,
+                                    bottom: bottom + spacing.y,
+                                };
+                                
+                                frame.show(ui, |ui| {
+                                    self.panes[id].show(false, &mut self.state, ui);
+                                });
+                            });
                         });
-                        
                     }
                 });
         });
