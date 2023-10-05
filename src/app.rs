@@ -16,15 +16,20 @@ pub static STATUS: Lazy<Mutex<String>> = Lazy::new(||
 #[serde(default)]
 pub struct App {
     state: State,
+
     #[serde(skip)]
-    panes: EnumMap<PaneId, Box<dyn Pane>>
+    panes: EnumMap<PaneId, Box<dyn Pane>>,
+
+    #[serde(skip)]
+    pane_state: EnumMap<PaneId, bool>
 }
 
 impl Default for App {
     fn default() -> Self {
         Self { 
             state: State::default(), 
-            panes: init_panes()
+            panes: init_panes(),
+            pane_state: EnumMap::default()
         }
     }
 }
@@ -135,10 +140,34 @@ impl eframe::App for App {
     }
 
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        for (_, pane) in self.panes.iter_mut() {
-            pane.setup(ctx).show(ctx, |ui| {
-                pane.show(&mut self.state, ui);
+        egui::TopBottomPanel::top(new_id()).show(ctx, |ui| {
+            egui::menu::bar(ui, |ui| {
+                if ui.button("Dock Inventory").clicked() {
+                    log::info!("Click");
+                    self.pane_state[PaneId::Inventory] = !self.pane_state[PaneId::Inventory];
+                }
             });
+            /*
+            // TODO: Draw docked panes next to eachother in a horizontal span
+            let docked_panes = self.pane_state.
+                iter()
+                .filter_map(|(id, state)| {
+                    if *state { Some(id) } else { None }
+            });
+
+            ui.horizontal_top(|ui| {
+                for id in docked_panes.into_iter() {
+                    self.panes[id].show(&mut self.state, ui);
+                }
+            });*/
+        });
+
+        for (id, pane) in self.panes.iter_mut() {
+            if !self.pane_state[id] {
+                pane.setup(ctx).show(ctx, |ui| {
+                    pane.show(&mut self.state, ui);
+                });
+            }
         }
 
         egui::TopBottomPanel::bottom(new_id()).show(ctx, |ui| {
