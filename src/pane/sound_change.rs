@@ -104,8 +104,12 @@ impl SoundChangePane {
 }
 
 impl Pane for SoundChangePane {
-    fn setup<'a, 'b: 'a>(&'a mut self, _ctx: &egui::Context) -> egui::Window<'b> {
-        egui::Window::new("Sound Changes")
+    fn title(&self, _state: &crate::State) -> std::rc::Rc<str> {
+        std::rc::Rc::from("Sound Changes")
+    }
+
+    fn setup<'a, 'b: 'a>(&'a mut self, state: &crate::State, _ctx: &egui::Context) -> egui::Window<'b> {
+        egui::Window::new(self.title(state).as_ref())
     }
 
     fn show(&mut self, _windowed: bool, state: &mut crate::State, ui: &mut egui::Ui) {

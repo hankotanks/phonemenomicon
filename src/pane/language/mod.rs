@@ -1,7 +1,7 @@
 mod context;
 mod inventory;
 
-use std::fmt;
+use std::rc;
 
 use egui_extras::Size;
 use enum_iterator::cardinality;
@@ -24,15 +24,6 @@ pub enum LanguagePaneRole {
     Ipa
 }
 
-impl fmt::Display for LanguagePaneRole {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", match self {
-            LanguagePaneRole::Inventory => "Inventory",
-            LanguagePaneRole::Ipa => "IPA",
-        })
-    }
-}
-
 pub struct LanguagePane {
     role: LanguagePaneRole
 }
@@ -46,7 +37,15 @@ impl LanguagePane {
 }
 
 impl Pane for LanguagePane {
-    fn setup<'a, 'b: 'a>(&'a mut self, ctx: &egui::Context) -> egui::Window<'b> {
+    fn title(&self, state: &crate::State) -> std::rc::Rc<str> {
+        if matches!(self.role, LanguagePaneRole::Inventory) {
+            state.dialects[state.inventory].name.clone()
+        } else {
+            rc::Rc::from("IPA")
+        }
+    }
+
+    fn setup<'a, 'b: 'a>(&'a mut self, state: &crate::State, ctx: &egui::Context) -> egui::Window<'b> {
         let spacing = ctx.style().spacing.item_spacing;
         let padding = ctx.style().spacing.button_padding;
 
@@ -57,7 +56,7 @@ impl Pane for LanguagePane {
         let height = cardinality::<Articulation>().max(cardinality::<Constriction>());
         let height = (FONT_ID.size + (spacing.y + padding.y) * 2.) * (height + 2) as f32;
         
-        egui::Window::new(format!("{}", self.role))
+        egui::Window::new(self.title(state).as_ref())
             .resizable(true)
             .constrain(true)
             .min_width(width)

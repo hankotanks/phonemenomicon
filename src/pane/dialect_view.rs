@@ -212,8 +212,12 @@ fn depth(
 }
 
 impl Pane for DialectPane {
-    fn setup<'a, 'b: 'a>(&'a mut self, _ctx: &egui::Context) -> egui::Window<'b> {
-        egui::Window::new("Dialects").constrain(true)
+    fn title(&self, _state: &crate::State) -> std::rc::Rc<str> {
+        std::rc::Rc::from("Dialects")
+    }
+    
+    fn setup<'a, 'b: 'a>(&'a mut self, state: &crate::State, _ctx: &egui::Context) -> egui::Window<'b> {
+        egui::Window::new(self.title(state).as_ref())
     }
 
     fn show(&mut self, _windowed: bool, state: &mut crate::State, ui: &mut egui::Ui) {

@@ -144,8 +144,9 @@ impl eframe::App for App {
             egui::menu::bar(ui, |ui| {
                 ui.menu_button("Dock", |ui| {
                     for (id, state) in self.pane_state.iter_mut() {
-                        // TODO: Don't use debug formatter
-                        ui.toggle_value(state, format!("{:?}", id));
+                        let title = self.panes[id].title(&self.state);
+
+                        ui.toggle_value(state, title.as_ref());
                     }
                 });
             });
@@ -163,8 +164,10 @@ impl eframe::App for App {
                     for id in docked_panes.into_iter() {
                         strip.cell(|ui| { 
                             ui.vertical(|ui| {
-                                // TODO: Don't use debug formatter
-                                ui.heading(format!("{:?}", id));
+                                let title = self.panes[id].title(&self.state);
+
+                                ui.heading(title.as_ref());
+                                
                                 let spacing = ui.style().spacing.item_spacing;
 
                                 let mut frame = egui::Frame::none()
@@ -190,7 +193,7 @@ impl eframe::App for App {
 
         for (id, pane) in self.panes.iter_mut() {
             if !self.pane_state[id] {
-                pane.setup(ctx).show(ctx, |ui| {
+                pane.setup(&self.state, ctx).show(ctx, |ui| {
                     pane.show(true, &mut self.state, ui);
                 });
             }

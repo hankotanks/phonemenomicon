@@ -281,8 +281,13 @@ impl<'a, 'b, A, B, C> InventoryPane<'a, 'b, A, B, C>
 impl<'a, 'b, A, B, C> Pane for InventoryPane<'a, 'b, A, B, C> 
     where A: Outer<B, C>, B: Inner<C>, C: Pair + CategoryColor {
 
-    fn setup<'c, 'd: 'c>(&'c mut self, _ctx: &egui::Context) -> egui::Window<'d> {
-        egui::Window::new(egui::RichText::default())
+    fn title(&self, _state: &crate::State) -> std::rc::Rc<str> {
+        // TODO: I would like this to read "Consonants" or "Vowels" depending on the generics
+        std::rc::Rc::from("Inventory")
+    }
+    
+    fn setup<'c, 'd: 'c>(&'c mut self, state: &crate::State, _ctx: &egui::Context) -> egui::Window<'d> {
+        egui::Window::new(self.title(state).as_ref())
     }
 
     fn show(&mut self, windowed: bool, state: &mut crate::State, ui: &mut egui::Ui) {

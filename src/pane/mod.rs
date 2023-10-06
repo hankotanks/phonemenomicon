@@ -6,6 +6,8 @@ mod dialect_view;
 
 pub mod util;
 
+use std::rc;
+
 pub use language::LanguagePaneRole;
 
 use language::LanguagePane;
@@ -29,7 +31,8 @@ pub enum PaneId {
 }
 
 pub trait Pane {
-    fn setup<'a, 'b: 'a>(&'a mut self, ctx: &egui::Context) -> egui::Window<'b>;
+    fn title(&self, state: &State) -> rc::Rc<str>;
+    fn setup<'a, 'b: 'a>(&'a mut self, state: &State, ctx: &egui::Context) -> egui::Window<'b>;
     fn show(&mut self, windowed: bool, state: &mut State, ui: &mut egui::Ui);
 }
 
