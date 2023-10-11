@@ -3,6 +3,7 @@ mod romanization;
 mod lexicon;
 mod sound_change;
 mod dialect_view;
+mod context;
 
 pub mod util;
 

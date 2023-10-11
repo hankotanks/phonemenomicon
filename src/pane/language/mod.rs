@@ -1,4 +1,3 @@
-mod context;
 mod inventory;
 
 use std::rc;

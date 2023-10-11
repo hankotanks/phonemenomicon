@@ -1,9 +1,14 @@
 pub mod diacritics;
 
-use egui_extras::Column;
+use std::mem;
 
-use crate::types::{Phoneme, Alphabet};
-use crate::types::category::{Outer, Pair, Inner};
+use egui_extras::Column;
+use slotmap::SlotMap;
+
+use crate::types::{Alphabet, Phoneme, CONSONANT, VOWEL, Language};
+use crate::types::category::{Outer, Inner, Pair};
+use crate::types::category::{Articulation, Region, Voicing, Constriction, Place, Rounding};
+
 use crate::app::FONT_ID;
 
 fn show_row_content<A, B, C>(
@@ -76,7 +81,7 @@ fn show_rows<A, B, C>(
 }
 
 #[allow(unused_variables)]
-pub fn diacritics_display<A, B, C>(
+fn diacritics_display<A, B, C>(
     ui: &mut egui::Ui, 
     diacritics: diacritics::Diacritics<A, B, C>, 
     inventory: &Alphabet<A, B, C>,
@@ -103,5 +108,54 @@ pub fn diacritics_display<A, B, C>(
                 show_rows(ui, diacritics, inventory, phoneme);
             });
         },
+    }
+}
+
+#[allow(unused_variables)]
+pub fn cell_context<A: Outer<B, C>, B: Inner<C>, C: Pair>(
+    ui: &mut egui::Ui,
+    inventory: &mut Alphabet<A, B, C>,
+    ipa: &Language,
+    phonemes: &mut SlotMap<slotmap::DefaultKey, Phoneme>,
+    phoneme: Phoneme) {
+
+    if mem::discriminant(&phoneme.phone) == CONSONANT {
+        let inventory = unsafe {
+            type Dst = Alphabet<Articulation, Region, Voicing>;
+            mem::transmute::<&Alphabet<A, B, C>, &Dst>(inventory)
+        };
+
+        let quality = inventory.get_quality(phoneme.id()).unwrap();
+        for diacritics in diacritics::modifiers_consonants(
+            phonemes, &ipa.consonants, quality) {
+            
+            let phoneme = &mut phonemes[phoneme.id()];
+            diacritics_display(ui, diacritics, inventory, phoneme);
+        }
+    } else if mem::discriminant(&phoneme.phone) == VOWEL {
+        let inventory = unsafe {
+            type Dst = Alphabet<Constriction, Place, Rounding>;
+            mem::transmute::<&Alphabet<A, B, C>, &Dst>(inventory)
+        };
+
+        let quality = inventory.get_quality(phoneme.id()).unwrap();
+        for diacritics in diacritics::modifiers_vowels(
+            phonemes, &ipa.vowels, quality) {
+            
+            let phoneme = &mut phonemes[phoneme.id()];
+            diacritics_display(ui, diacritics, inventory, phoneme);
+        }
+    } else {
+        unreachable!();
+    }
+
+    let content = egui::RichText::new("Remove Phoneme").italics();
+
+    if ui.button(content).clicked() {
+        phonemes.remove(phoneme.id());
+
+        inventory.remove_phoneme(phoneme.id());
+
+        ui.close_menu();
     }
 }

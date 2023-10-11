@@ -1,67 +1,17 @@
 use std::collections::{HashSet, HashMap};
-use std::{ops, mem};
+use std::ops;
 
 use egui_extras::{StripBuilder, Size, Strip};
 use enum_iterator::{cardinality, all};
 use slotmap::SlotMap;
 
 use crate::app::FONT_ID;
-use crate::pane::Pane;
-use crate::pane::language::context;
-use crate::types::{Alphabet, Phoneme, CONSONANT, VOWEL, Language};
+use crate::pane;
+
 use crate::types::category::{Outer, Inner, Pair, CategoryColor};
-use crate::types::category::{Articulation, Region, Voicing, Constriction, Place, Rounding};
+use crate::types::{Alphabet, Phoneme, Language};
 use crate::pane::language::LanguagePaneRole;
 use crate::pane::util;
-
-#[allow(unused_variables)]
-fn cell_context<A: Outer<B, C>, B: Inner<C>, C: Pair>(
-    ui: &mut egui::Ui,
-    inventory: &mut Alphabet<A, B, C>,
-    ipa: &Language,
-    phonemes: &mut SlotMap<slotmap::DefaultKey, Phoneme>,
-    phoneme: Phoneme) {
-
-    if mem::discriminant(&phoneme.phone) == CONSONANT {
-        let inventory = unsafe {
-            type Dst = Alphabet<Articulation, Region, Voicing>;
-            mem::transmute::<&Alphabet<A, B, C>, &Dst>(inventory)
-        };
-
-        let quality = inventory.get_quality(phoneme.id()).unwrap();
-        for diacritics in context::diacritics::modifiers_consonants(
-            phonemes, &ipa.consonants, quality) {
-            
-            let phoneme = &mut phonemes[phoneme.id()];
-            context::diacritics_display(ui, diacritics, inventory, phoneme);
-        }
-    } else if mem::discriminant(&phoneme.phone) == VOWEL {
-        let inventory = unsafe {
-            type Dst = Alphabet<Constriction, Place, Rounding>;
-            mem::transmute::<&Alphabet<A, B, C>, &Dst>(inventory)
-        };
-
-        let quality = inventory.get_quality(phoneme.id()).unwrap();
-        for diacritics in context::diacritics::modifiers_vowels(
-            phonemes, &ipa.vowels, quality) {
-            
-            let phoneme = &mut phonemes[phoneme.id()];
-            context::diacritics_display(ui, diacritics, inventory, phoneme);
-        }
-    } else {
-        unreachable!();
-    }
-
-    let content = egui::RichText::new("Remove Phoneme").italics();
-
-    if ui.button(content).clicked() {
-        phonemes.remove(phoneme.id());
-
-        inventory.remove_phoneme(phoneme.id());
-
-        ui.close_menu();
-    }
-}
 
 fn cell_populated<A: Outer<B, C>, B: Inner<C>, C: Pair + CategoryColor>(
     windowed: bool,
@@ -136,7 +86,7 @@ fn cell_populated<A: Outer<B, C>, B: Inner<C>, C: Pair + CategoryColor>(
                 .wrap(false);
 
             let response = ui.add(button).context_menu(|ui| {
-                cell_context::<A, B, C>(ui, inventory, ipa, phonemes, phoneme.clone());
+                pane::context::cell_context::<A, B, C>(ui, inventory, ipa, phonemes, phoneme.clone());
             });
 
             (response, LanguagePaneRole::Inventory)
@@ -278,7 +228,7 @@ impl<'a, 'b, A, B, C> InventoryPane<'a, 'b, A, B, C>
     }
 }
 
-impl<'a, 'b, A, B, C> Pane for InventoryPane<'a, 'b, A, B, C> 
+impl<'a, 'b, A, B, C> pane::Pane for InventoryPane<'a, 'b, A, B, C> 
     where A: Outer<B, C>, B: Inner<C>, C: Pair + CategoryColor {
 
     fn title(&self, _state: &crate::State) -> std::rc::Rc<str> {
