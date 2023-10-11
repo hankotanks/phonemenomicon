@@ -93,6 +93,26 @@ fn show_dialect_internal(
                     // Clear current string
                     current.clear();
                 }
+
+                if state.language_tree
+                    .neighbors_directed(id, petgraph::Outgoing)
+                    .count() == 0 {
+
+                    if let Some(parent) =  state.language_tree
+                        .neighbors_directed(id, petgraph::Incoming)
+                        .next() {
+                            
+                        if ui.button("Delete").clicked() {
+                            let edge = state.language_tree
+                                .find_edge(parent, id)
+                                .unwrap();
+
+                            // TODO: Must also remove language from `state.dialects`
+                            state.language_tree.remove_edge(edge);
+                            state.language_tree.remove_node(id);
+                        }
+                    }
+                }
             });
 
             dialect_button_center
