@@ -2,6 +2,8 @@ use std::{mem, fmt, vec};
 use std::rc::Rc;
 use std::borrow::Cow;
 
+use enum_iterator::{Sequence, all};
+
 use crate::types::category::Category;
 use crate::app::FONT_ID;
 
@@ -150,6 +152,35 @@ impl<A, B, C> PhonemeQuality<A, B, C>
         let (a, b, c) = raw;
 
         Self(from_raw::<A>(a), from_raw::<B>(b), from_raw::<C>(c))
+    }
+
+    /// Example:
+    /// If `restriction` is (Plosive, [Dental, Alveolar], [Voiced, Voiceless])
+    /// And the phoneme tested is 'd' (Plosive, [Alevolar, PostAlveolar], Voiced)
+    /// This function returns truthy
+    /// Empty slices are shorthand for 'all variants'
+    /// Because you would never search for an 
+    pub fn meets_restrictions(&self, mut restriction: PhonemeSelector<A, B, C>) -> bool {
+        if restriction.0.is_empty() //
+            && restriction.1.is_empty() //
+            && restriction.2.is_empty() {
+
+            return true;
+        }
+
+        fn every_variant<T: Sequence>() -> Rc<[T]> {
+            let variants = all::<T>().collect::<Vec<_>>();
+            Rc::from(variants)
+        }
+
+        if restriction.0.is_empty() { restriction.0 = every_variant::<A>(); }
+        if restriction.1.is_empty() { restriction.1 = every_variant::<B>(); }
+        if restriction.2.is_empty() { restriction.2 = every_variant::<C>(); }
+        
+        let restrictions: Vec<(A, B, C)> = restriction.into_iter().collect();
+
+        // TODO: This clone sucks
+        self.clone().into_iter().any(|item| restrictions.contains(&item))
     }
 }
 

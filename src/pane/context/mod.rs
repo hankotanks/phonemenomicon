@@ -5,7 +5,7 @@ use std::mem;
 use egui_extras::Column;
 use slotmap::SlotMap;
 
-use crate::types::{Alphabet, Phoneme, CONSONANT, VOWEL, Language};
+use crate::types::{Alphabet, Phoneme, CONSONANT, VOWEL, Language, PhonemeQuality};
 use crate::types::category::{Outer, Inner, Pair};
 use crate::types::category::{Articulation, Region, Voicing, Constriction, Place, Rounding};
 
@@ -59,7 +59,7 @@ fn show_row_content<A, B, C>(
 fn show_rows<A, B, C>(
     ui: &mut egui::Ui, 
     diacritics: diacritics::Diacritics<A, B, C>,
-    inventory: &Alphabet<A, B, C>,
+    quality: PhonemeQuality<A, B, C>,
     phoneme: &mut Phoneme) where 
     A: Outer<B, C>, B: Inner<C>, C: Pair {
     let row_height = FONT_ID.size;
@@ -70,7 +70,7 @@ fn show_rows<A, B, C>(
         .column(Column::remainder())
         .body(|mut body| {
             for (restriction, modifier, desc) in diacritics.contents.iter() {
-                if inventory.meets_restrictions(phoneme.id(), restriction.clone()) {
+                if quality.meets_restrictions(restriction.clone()) {
                     
                     body.row(row_height, |row| {
                         show_row_content(row, &diacritics, phoneme, &modifier, &desc);
@@ -84,7 +84,7 @@ fn show_rows<A, B, C>(
 fn diacritics_display<A, B, C>(
     ui: &mut egui::Ui, 
     diacritics: diacritics::Diacritics<A, B, C>, 
-    inventory: &Alphabet<A, B, C>,
+    quality: PhonemeQuality<A, B, C>,
     phoneme: &mut Phoneme) where A: Outer<B, C>, B: Inner<C>, C: Pair {
 
     match diacritics.behavior {
@@ -99,13 +99,13 @@ fn diacritics_display<A, B, C>(
 
             } else {
                 ui.menu_button(diacritics.category, |ui| {
-                    show_rows(ui, diacritics, inventory, phoneme);
+                    show_rows(ui, diacritics, quality, phoneme);
                 });
             }
         },
         diacritics::DiacriticsBehavior::Multiple { .. } => {
             ui.menu_button(diacritics.category, |ui| {
-                show_rows(ui, diacritics, inventory, phoneme);
+                show_rows(ui, diacritics, quality, phoneme);
             });
         },
     }
@@ -114,48 +114,49 @@ fn diacritics_display<A, B, C>(
 #[allow(unused_variables)]
 pub fn cell_context<A: Outer<B, C>, B: Inner<C>, C: Pair>(
     ui: &mut egui::Ui,
-    inventory: &mut Alphabet<A, B, C>,
+    quality: PhonemeQuality<A, B, C>,
+    inventory: Option<&mut Alphabet<A, B, C>>,
     ipa: &Language,
     phonemes: &mut SlotMap<slotmap::DefaultKey, Phoneme>,
     phoneme: Phoneme) {
 
+    type Src<A, B, C> = PhonemeQuality<A, B, C>;
     if mem::discriminant(&phoneme.phone) == CONSONANT {
-        let inventory = unsafe {
-            type Dst = Alphabet<Articulation, Region, Voicing>;
-            mem::transmute::<&Alphabet<A, B, C>, &Dst>(inventory)
+        let quality = unsafe {
+            type Dst = PhonemeQuality<Articulation, Region, Voicing>;
+            mem::transmute::<&Src<A, B, C>, &Dst>(&quality)
         };
 
-        let quality = inventory.get_quality(phoneme.id()).unwrap();
         for diacritics in diacritics::modifiers_consonants(
-            phonemes, &ipa.consonants, quality) {
+            phonemes, &ipa.consonants, quality.clone()) {
             
             let phoneme = &mut phonemes[phoneme.id()];
-            diacritics_display(ui, diacritics, inventory, phoneme);
+            diacritics_display(ui, diacritics, quality.clone(), phoneme);
         }
     } else if mem::discriminant(&phoneme.phone) == VOWEL {
-        let inventory = unsafe {
-            type Dst = Alphabet<Constriction, Place, Rounding>;
-            mem::transmute::<&Alphabet<A, B, C>, &Dst>(inventory)
+        let quality = unsafe {
+            type Dst = PhonemeQuality<Constriction, Place, Rounding>;
+            mem::transmute::<&Src<A, B, C>, &Dst>(&quality)
         };
 
-        let quality = inventory.get_quality(phoneme.id()).unwrap();
         for diacritics in diacritics::modifiers_vowels(
-            phonemes, &ipa.vowels, quality) {
+            phonemes, &ipa.vowels, quality.clone()) {
             
             let phoneme = &mut phonemes[phoneme.id()];
-            diacritics_display(ui, diacritics, inventory, phoneme);
+            diacritics_display(ui, diacritics, quality.clone(), phoneme);
         }
     } else {
         unreachable!();
     }
 
-    let content = egui::RichText::new("Remove Phoneme").italics();
+    if let Some(inventory) = inventory {
+        let content = egui::RichText::new("Remove Phoneme").italics();
 
-    if ui.button(content).clicked() {
-        phonemes.remove(phoneme.id());
-
-        inventory.remove_phoneme(phoneme.id());
-
-        ui.close_menu();
+        if ui.button(content).clicked() {
+            phonemes.remove(phoneme.id());
+            inventory.remove_phoneme(phoneme.id());
+    
+            ui.close_menu();
+        }
     }
 }

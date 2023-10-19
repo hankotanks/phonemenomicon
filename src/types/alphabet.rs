@@ -1,9 +1,7 @@
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::mem;
-use std::rc::Rc;
 
-use enum_iterator::{all, Sequence};
 use enum_map::EnumMap;
 use slotmap::{DefaultKey, SlotMap};
 
@@ -106,31 +104,13 @@ impl<A, B, C> Alphabet<A, B, C>
     /// This function returns truthy
     /// Empty slices are shorthand for 'all variants'
     /// Because you would never search for an 
-    pub fn meets_restrictions(&self, id: DefaultKey, mut restriction: PhonemeSelector<A, B, C>) -> bool {
+    pub fn meets_restrictions(&self, id: DefaultKey, restriction: PhonemeSelector<A, B, C>) -> bool {
         let quality = match self.get_quality(id) {
             Some(quality) => quality,
             None => panic!()
         };
 
-        if restriction.0.is_empty() //
-            && restriction.1.is_empty() //
-            && restriction.2.is_empty() {
-
-            return true;
-        }
-
-        fn every_variant<T: Sequence>() -> Rc<[T]> {
-            let variants = all::<T>().collect::<Vec<_>>();
-            Rc::from(variants)
-        }
-
-        if restriction.0.is_empty() { restriction.0 = every_variant::<A>(); }
-        if restriction.1.is_empty() { restriction.1 = every_variant::<B>(); }
-        if restriction.2.is_empty() { restriction.2 = every_variant::<C>(); }
-        
-        let restrictions: Vec<(A, B, C)> = restriction.into_iter().collect();
-
-        quality.into_iter().any(|item| restrictions.contains(&item))
+        quality.meets_restrictions(restriction)
     }
 
     pub fn phonemes(&self) -> impl Iterator<Item = DefaultKey> + '_ {

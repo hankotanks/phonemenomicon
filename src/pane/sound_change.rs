@@ -5,8 +5,8 @@ use egui_extras::Size;
 use enum_map::EnumMap;
 
 use crate::app::{FONT_ID, STATUS};
-use crate::pane::Pane;
 
+use crate::pane;
 use crate::pane::language::LanguagePaneRole;
 
 use crate::state::Selection;
@@ -111,7 +111,7 @@ impl SoundChangePane {
     }
 }
 
-impl Pane for SoundChangePane {
+impl pane::Pane for SoundChangePane {
     fn title(&self, _state: &crate::State) -> std::rc::Rc<str> {
         std::rc::Rc::from("Sound Changes")
     }
@@ -185,6 +185,8 @@ impl Pane for SoundChangePane {
                     response.context_menu(|_ui| {
                         // TODO: Move cell_context to utils
                         // cell_context::<A, B, C>(ui, inventory, ipa, phonemes, phoneme.clone());
+                        
+                        // pane::context::cell_context(ui, quality, inventory, ipa, phonemes, phoneme)
                     });
                 });
             });

@@ -90,7 +90,10 @@ fn cell_populated<A: Outer<B, C>, B: Inner<C>, C: Pair + CategoryColor>(
                 .wrap(false);
 
             let response = ui.add(button).context_menu(|ui| {
-                pane::context::cell_context::<A, B, C>(ui, inventory, ipa, phonemes, phoneme.clone());
+                // TODO: Double check this unwrap
+                let quality = inventory.get_quality(phoneme.id()).unwrap();
+                
+                pane::context::cell_context::<A, B, C>(ui, quality, Some(inventory), ipa, phonemes, phoneme.clone());
             });
 
             (response, quality, LanguagePaneRole::Inventory)
