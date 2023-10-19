@@ -121,6 +121,16 @@ impl Into<egui::RichText> for Phoneme {
     }
 }
 
+fn into_raw(quality: Rc<[impl Category]>) -> Rc<[usize]> {
+    let raw = quality.iter().map(|q| q.into_usize()).collect::<Vec<_>>();
+    Rc::from(raw.as_slice())
+}
+
+fn from_raw<T: Category>(raw: Rc<[usize]>) -> Rc<[T]> {
+    let quality = raw.iter().map(|r| T::from_usize(*r)).collect::<Vec<_>>();
+    Rc::from(quality.as_slice())
+}
+
 #[derive(Clone)]
 pub struct PhonemeQuality<A, B, C>(pub Rc<[A]>, pub Rc<[B]>, pub Rc<[C]>)
     where A: Category, B: Category, C: Category;
@@ -130,6 +140,16 @@ impl<A, B, C> PhonemeQuality<A, B, C>
 
     pub fn blank() -> Self {
         (&[][..], &[][..], &[][..]).into()
+    }
+
+    pub fn into_raw(&self) -> (Rc<[usize]>, Rc<[usize]>, Rc<[usize]>) {
+        (into_raw(self.0.clone()), into_raw(self.1.clone()), into_raw(self.2.clone()))
+    }
+
+    pub fn from_raw(raw: (Rc<[usize]>, Rc<[usize]>, Rc<[usize]>)) -> Self {
+        let (a, b, c) = raw;
+
+        Self(from_raw::<A>(a), from_raw::<B>(b), from_raw::<C>(c))
     }
 }
 

@@ -3,14 +3,17 @@ use std::mem;
 use egui::RichText;
 use egui_extras::Size;
 use enum_map::EnumMap;
-use slotmap::{DefaultKey, SlotMap};
 
 use crate::app::{FONT_ID, STATUS};
 use crate::pane::Pane;
 
 use crate::pane::language::LanguagePaneRole;
 
-use crate::types::{Phoneme, CONSONANT, Language};
+use crate::state::Selection;
+use crate::types::{CONSONANT, VOWEL, PhonemeQuality};
+
+use crate::types::category::{Articulation, Region, Voicing};
+use crate::types::category::{Constriction, Place, Rounding};
 
 use crate::pane::util;
 
@@ -31,7 +34,7 @@ impl SoundChangeRequest {
 
 pub struct SoundChangePane {
     request: Option<SoundChangeRequest>,
-    current: EnumMap<SoundChangeRequest, Option<(DefaultKey, LanguagePaneRole)>>
+    current: EnumMap<SoundChangeRequest, Option<Selection>>
 }
 
 impl SoundChangePane {
@@ -45,9 +48,8 @@ impl SoundChangePane {
     fn sound_change_field(
         &mut self,
         ui: &mut egui::Ui,
-        phonemes: &SlotMap<DefaultKey, Phoneme>,
         request: SoundChangeRequest,
-        buffer: Option<(DefaultKey, &Language)>,
+        buffer: Option<Selection>,
         buffer_state: &mut bool) -> egui::Response {
 
         let mut toggle_state = if let Some(inner_request) = self.request {
@@ -76,13 +78,19 @@ impl SoundChangePane {
         egui_extras::StripBuilder::new(ui)
             .size(Size::exact(FONT_ID.size * 2.))
             .horizontal(|mut strip| { strip.cell(|ui| {
-                if let Some((id, inventory)) = buffer {
-                    let phoneme = &phonemes[id];
+                if let Some(selection) = buffer {
+                    let Selection { phoneme, quality, .. } = selection;
         
                     let bg_color = if mem::discriminant(&phoneme.phone) == CONSONANT {
-                        util::cell_color(ui, inventory.consonants.get_quality(id))
+                        let quality: PhonemeQuality<Articulation, Region, Voicing> = PhonemeQuality::from_raw(quality);
+
+                        util::cell_color(ui, Some(quality))
+                    } else if mem::discriminant(&phoneme.phone) == VOWEL {
+                        let quality: PhonemeQuality<Constriction, Place, Rounding> = PhonemeQuality::from_raw(quality);
+
+                        util::cell_color(ui, Some(quality))
                     } else {
-                        util::cell_color(ui, inventory.vowels.get_quality(id))
+                        unreachable!();
                     };
         
                     let content = format!("{}", phoneme);
@@ -116,10 +124,10 @@ impl Pane for SoundChangePane {
         // Collect from the buffer
         if let Some(request) = self.request {
             if let Some(buffer_contents) = state.buffer.take() {
-                let (_, source) = buffer_contents;
+                let Selection { ref source, .. } = buffer_contents;
 
                 let mut advance = true;
-                if request.is_valid_source(source) {
+                if request.is_valid_source(*source) {
                     self.current[request] = Some(buffer_contents);
                 } else {
                     // TODO: This else statement assumes that there will never
@@ -158,22 +166,20 @@ impl Pane for SoundChangePane {
             margin.bottom += ui.style().spacing.item_spacing.y * 2.;
             egui::Frame::none().outer_margin(margin).show(ui, |ui| {
                 ui.horizontal_top(|ui| {
+                    // TODO: The clones in this section are not great...
+
                     self.sound_change_field(
-                        ui, &state.phonemes,
+                        ui,
                         SoundChangeRequest::Src,
-                        self.current[SoundChangeRequest::Src].map(|(id, role)| match role {
-                            LanguagePaneRole::Inventory => (id, &state.dialects[state.inventory]),
-                            LanguagePaneRole::Ipa => (id, &state.ipa),
-                        }), &mut state.buffer_state
+                        self.current[SoundChangeRequest::Src].clone(), 
+                        &mut state.buffer_state
                     );
         
                     let response = self.sound_change_field(
-                        ui, &state.phonemes,
+                        ui,
                         SoundChangeRequest::Dst,
-                        self.current[SoundChangeRequest::Dst].map(|(id, role)| match role {
-                            LanguagePaneRole::Inventory => (id, &state.dialects[state.inventory]),
-                            LanguagePaneRole::Ipa => (id, &state.ipa),
-                        }), &mut state.buffer_state
+                        self.current[SoundChangeRequest::Dst].clone(), 
+                        &mut state.buffer_state
                     );
 
                     response.context_menu(|_ui| {

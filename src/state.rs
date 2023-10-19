@@ -10,6 +10,13 @@ use crate::types::category;
 #[allow(unused_imports)]
 use crate::types::{add_symbol_to_alphabet, CONSONANT, VOWEL};
 
+#[derive(Clone)]
+pub struct Selection {
+    pub phoneme: Phoneme,
+    pub quality: (rc::Rc<[usize]>, rc::Rc<[usize]>, rc::Rc<[usize]>),
+    pub source: LanguagePaneRole
+}
+
 #[derive(serde::Deserialize, serde::Serialize)]
 pub struct State {
     pub phonemes: SlotMap<slotmap::DefaultKey, Phoneme>,
@@ -22,7 +29,7 @@ pub struct State {
     pub space: Phoneme,
 
     #[serde(skip)]
-    pub buffer: Option<(slotmap::DefaultKey, LanguagePaneRole)>,
+    pub buffer: Option<Selection>,
 
     #[serde(skip)]
     pub buffer_state: bool

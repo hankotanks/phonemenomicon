@@ -8,6 +8,7 @@ use slotmap::SlotMap;
 use crate::app::FONT_ID;
 use crate::pane;
 
+use crate::state::Selection;
 use crate::types::category::{Outer, Inner, Pair, CategoryColor};
 use crate::types::{Alphabet, Phoneme, Language};
 use crate::pane::language::LanguagePaneRole;
@@ -19,7 +20,7 @@ fn cell_populated<A: Outer<B, C>, B: Inner<C>, C: Pair + CategoryColor>(
     role: &mut InventoryPaneRole<'_, '_, A, B, C>,
     ipa: &Language, 
     phonemes: &mut SlotMap<slotmap::DefaultKey, Phoneme>,
-    buffer: &mut Option<(slotmap::DefaultKey, LanguagePaneRole)>,
+    buffer: &mut Option<Selection>,
     buffer_state: bool,
     phoneme: Phoneme) {
 
@@ -41,20 +42,20 @@ fn cell_populated<A: Outer<B, C>, B: Inner<C>, C: Pair + CategoryColor>(
         0., util::cell_color(ui, quality));
 
     #[allow(unused_variables)]
-    let (response, source) = match role {
+    let (response, quality, source) = match role {
         InventoryPaneRole::Source { inventory, phonemes: source } => {
             let button_content: egui::RichText = phoneme.clone().into();
             let button = egui::Button::new(button_content)
                 .fill(egui::Color32::TRANSPARENT)
                 .min_size(ui.available_size_before_wrap())
                 .wrap(false);
+
+            // TODO: I think this unwrap is safe, should double check
+            let quality = source.get_quality(phoneme.id()).unwrap();
             
             let response = ui.add(button);
 
             if response.clicked() && !buffer_state {
-                // TODO: I think this unwrap is safe, should double check
-                let quality = source.get_quality(phoneme.id()).unwrap();
-
                 let phoneme = Phoneme::new(
                     String::from(phoneme.symbol.as_str()), 
                     phoneme.phone.clone()
@@ -64,12 +65,15 @@ fn cell_populated<A: Outer<B, C>, B: Inner<C>, C: Pair + CategoryColor>(
 
                 phonemes[id].set_id(id);
 
-                inventory.add_phoneme(id, quality);
+                inventory.add_phoneme(id, quality.clone());
             }
 
-            (response, LanguagePaneRole::Ipa)
+            (response, quality, LanguagePaneRole::Ipa)
         },
         InventoryPaneRole::Display { inventory } => {
+             // TODO: I think this unwrap is safe, should double check
+            let quality = inventory.get_quality(phoneme.id()).unwrap();
+
             let contents = format!("{}", phoneme);
             let contents = if !phoneme.grapheme.is_empty() && contents != phoneme.grapheme {
                 format!("{} [{}]", contents, phoneme.grapheme)
@@ -89,12 +93,18 @@ fn cell_populated<A: Outer<B, C>, B: Inner<C>, C: Pair + CategoryColor>(
                 pane::context::cell_context::<A, B, C>(ui, inventory, ipa, phonemes, phoneme.clone());
             });
 
-            (response, LanguagePaneRole::Inventory)
+            (response, quality, LanguagePaneRole::Inventory)
         },
     };
 
     if response.clicked() && buffer_state {
-        let _ = buffer.insert((phoneme.id(), source));
+        let selection = Selection {
+            phoneme,
+            quality: quality.into_raw(),
+            source
+        };
+        
+        let _ = buffer.insert(selection);
     }
 }
 
@@ -104,7 +114,7 @@ fn cell<A: Outer<B, C>, B: Inner<C>, C: Pair + CategoryColor>(
     role: &mut InventoryPaneRole<'_, '_, A, B, C>,
     ipa: &Language,
     phonemes: &mut SlotMap<slotmap::DefaultKey, Phoneme>,
-    buffer: &mut Option<(slotmap::DefaultKey, LanguagePaneRole)>,
+    buffer: &mut Option<Selection>,
     buffer_state: bool,
     occurrence: Option<Phoneme>) {
     
@@ -141,7 +151,7 @@ impl<'a, 'b, A, B, C> InventoryPane<'a, 'b, A, B, C>
         invalid: Phoneme, 
         space: Phoneme, 
         phonemes: &mut SlotMap<slotmap::DefaultKey, Phoneme>, 
-        buffer: &mut Option<(slotmap::DefaultKey, LanguagePaneRole)>,
+        buffer: &mut Option<Selection>,
         buffer_state: bool,
         ipa: &Language) {
 
