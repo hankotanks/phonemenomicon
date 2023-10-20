@@ -182,12 +182,24 @@ impl pane::Pane for SoundChangePane {
                         &mut state.buffer_state
                     );
 
-                    response.context_menu(|_ui| {
-                        // TODO: Move cell_context to utils
-                        // cell_context::<A, B, C>(ui, inventory, ipa, phonemes, phoneme.clone());
+                    if let Some(selection) = &mut self.current[SoundChangeRequest::Dst] {
+                        log::info!("testing");
+                        let Selection { phoneme, quality, .. } = selection;
                         
-                        // pane::context::cell_context(ui, quality, inventory, ipa, phonemes, phoneme)
-                    });
+                        response.context_menu(|_ui| {
+                            if mem::discriminant(&phoneme.phone) == CONSONANT {
+                                let quality: PhonemeQuality<Articulation, Region, Voicing> = PhonemeQuality::from_raw(quality.clone());
+        
+                                pane::context::cell_context(ui, quality, None, &state.ipa, &mut state.phonemes, phoneme.clone());
+                            } else if mem::discriminant(&phoneme.phone) == VOWEL {
+                                let quality: PhonemeQuality<Constriction, Place, Rounding> = PhonemeQuality::from_raw(quality.clone());
+    
+                                pane::context::cell_context(ui, quality, None, &state.ipa, &mut state.phonemes, phoneme.clone());
+                            } else {
+                                unreachable!();
+                            };
+                        });
+                    }
                 });
             });
         });
