@@ -111,52 +111,86 @@ fn diacritics_display<A, B, C>(
     }
 }
 
+pub enum Context<'a, A: Outer<B, C>, B: Inner<C>, C: Pair> {
+    Bound { inventory: &'a mut Alphabet<A, B, C>, id: slotmap::DefaultKey },
+    Free { quality: PhonemeQuality<A, B, C>, phoneme: &'a mut Phoneme }
+}
+
 #[allow(unused_variables)]
 pub fn cell_context<A: Outer<B, C>, B: Inner<C>, C: Pair>(
     ui: &mut egui::Ui,
-    quality: PhonemeQuality<A, B, C>,
-    inventory: Option<&mut Alphabet<A, B, C>>,
     ipa: &Language,
     phonemes: &mut SlotMap<slotmap::DefaultKey, Phoneme>,
-    phoneme: Phoneme) {
-
-    type Src<A, B, C> = PhonemeQuality<A, B, C>;
-    if mem::discriminant(&phoneme.phone) == CONSONANT {
-        let quality = unsafe {
-            type Dst = PhonemeQuality<Articulation, Region, Voicing>;
-            mem::transmute::<&Src<A, B, C>, &Dst>(&quality)
-        };
-
-        for diacritics in diacritics::modifiers_consonants(
-            phonemes, &ipa.consonants, quality.clone()) {
-            
-            let phoneme = &mut phonemes[phoneme.id()];
-            diacritics_display(ui, diacritics, quality.clone(), phoneme);
-        }
-    } else if mem::discriminant(&phoneme.phone) == VOWEL {
-        let quality = unsafe {
-            type Dst = PhonemeQuality<Constriction, Place, Rounding>;
-            mem::transmute::<&Src<A, B, C>, &Dst>(&quality)
-        };
-
-        for diacritics in diacritics::modifiers_vowels(
-            phonemes, &ipa.vowels, quality.clone()) {
-            
-            let phoneme = &mut phonemes[phoneme.id()];
-            diacritics_display(ui, diacritics, quality.clone(), phoneme);
-        }
-    } else {
-        unreachable!();
-    }
-
-    if let Some(inventory) = inventory {
-        let content = egui::RichText::new("Remove Phoneme").italics();
-
-        if ui.button(content).clicked() {
-            phonemes.remove(phoneme.id());
-            inventory.remove_phoneme(phoneme.id());
+    context: Context<'_, A, B, C>) {
     
-            ui.close_menu();
+    match context {
+        Context::Bound { inventory, id } => {
+            // TODO: There must be a better way
+            let quality = inventory.get_quality(id).unwrap();
+
+            type Src<A, B, C> = PhonemeQuality<A, B, C>;
+            if mem::discriminant(&phonemes[id].phone) == CONSONANT {
+                let quality = unsafe {
+                    type Dst = PhonemeQuality<Articulation, Region, Voicing>;
+                    mem::transmute::<&Src<A, B, C>, &Dst>(&quality)
+                };
+        
+                for diacritics in diacritics::modifiers_consonants(
+                    phonemes, &ipa.consonants, quality.clone()) {
+                    
+                    diacritics_display(ui, diacritics, quality.clone(), &mut phonemes[id]);
+                }
+            } else if mem::discriminant(&phonemes[id].phone) == VOWEL {
+                let quality = unsafe {
+                    type Dst = PhonemeQuality<Constriction, Place, Rounding>;
+                    mem::transmute::<&Src<A, B, C>, &Dst>(&quality)
+                };
+        
+                for diacritics in diacritics::modifiers_vowels(
+                    phonemes, &ipa.vowels, quality.clone()) {
+                    
+                    diacritics_display(ui, diacritics, quality.clone(), &mut phonemes[id]);
+                }
+            } else {
+                unreachable!();
+            }
+
+            let content = egui::RichText::new("Remove Phoneme").italics();
+
+            if ui.button(content).clicked() {
+                phonemes.remove(id);
+                inventory.remove_phoneme(id);
+        
+                ui.close_menu();
+            }
+        },
+        Context::Free { quality, phoneme } => {
+            type Src<A, B, C> = PhonemeQuality<A, B, C>;
+            if mem::discriminant(&phoneme.phone) == CONSONANT {
+                let quality = unsafe {
+                    type Dst = PhonemeQuality<Articulation, Region, Voicing>;
+                    mem::transmute::<&Src<A, B, C>, &Dst>(&quality)
+                };
+        
+                for diacritics in diacritics::modifiers_consonants(
+                    phonemes, &ipa.consonants, quality.clone()) {
+                    
+                    diacritics_display(ui, diacritics, quality.clone(), phoneme);
+                }
+            } else if mem::discriminant(&phoneme.phone) == VOWEL {
+                let quality = unsafe {
+                    type Dst = PhonemeQuality<Constriction, Place, Rounding>;
+                    mem::transmute::<&Src<A, B, C>, &Dst>(&quality)
+                };
+        
+                for diacritics in diacritics::modifiers_vowels(
+                    phonemes, &ipa.vowels, quality.clone()) {
+                    
+                    diacritics_display(ui, diacritics, quality.clone(), phoneme);
+                }
+            } else {
+                unreachable!();
+            }
         }
     }
 }

@@ -17,6 +17,8 @@ use crate::types::category::{Constriction, Place, Rounding};
 
 use crate::pane::util;
 
+use super::context::Context;
+
 #[derive(Clone, Copy, PartialEq, enum_map::Enum)]
 enum SoundChangeRequest {
     Src,
@@ -50,7 +52,7 @@ impl SoundChangePane {
         ui: &mut egui::Ui,
         request: SoundChangeRequest,
         buffer: Option<Selection>,
-        buffer_state: &mut bool) -> egui::Response {
+        buffer_state: &mut bool) -> Option<egui::Response> {
 
         let mut toggle_state = if let Some(inner_request) = self.request {
             inner_request == request
@@ -75,6 +77,7 @@ impl SoundChangePane {
             *buffer_state = toggle_state;
         }
 
+        let mut response = None;
         egui_extras::StripBuilder::new(ui)
             .size(Size::exact(FONT_ID.size * 2.))
             .horizontal(|mut strip| { strip.cell(|ui| {
@@ -104,10 +107,16 @@ impl SoundChangePane {
         
                     ui.painter().rect_filled(rect, 0., bg_color);
                     ui.vertical_centered(|ui| {
-                        ui.label(content);
+                        let content = egui::Label::new(content)
+                            .wrap(false)
+                            .sense(egui::Sense::click());
+
+                        let _ = response.insert(ui.add(content));
                     });
                 }
-            })})
+            })});
+
+        response
     }
 }
 
@@ -183,18 +192,19 @@ impl pane::Pane for SoundChangePane {
                     );
 
                     if let Some(selection) = &mut self.current[SoundChangeRequest::Dst] {
-                        log::info!("testing");
                         let Selection { phoneme, quality, .. } = selection;
-                        
-                        response.context_menu(|_ui| {
+
+                        response.unwrap().context_menu(|ui| {
                             if mem::discriminant(&phoneme.phone) == CONSONANT {
                                 let quality: PhonemeQuality<Articulation, Region, Voicing> = PhonemeQuality::from_raw(quality.clone());
+                                let context = Context::Free { quality, phoneme };
         
-                                pane::context::cell_context(ui, quality, None, &state.ipa, &mut state.phonemes, phoneme.clone());
+                                pane::context::cell_context(ui, &state.ipa, &mut state.phonemes, context);
                             } else if mem::discriminant(&phoneme.phone) == VOWEL {
                                 let quality: PhonemeQuality<Constriction, Place, Rounding> = PhonemeQuality::from_raw(quality.clone());
+                                let context = Context::Free { quality, phoneme };
     
-                                pane::context::cell_context(ui, quality, None, &state.ipa, &mut state.phonemes, phoneme.clone());
+                                pane::context::cell_context(ui, &state.ipa, &mut state.phonemes, context);
                             } else {
                                 unreachable!();
                             };

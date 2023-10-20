@@ -8,6 +8,7 @@ use slotmap::SlotMap;
 use crate::app::FONT_ID;
 use crate::pane;
 
+use crate::pane::context::Context;
 use crate::state::Selection;
 use crate::types::category::{Outer, Inner, Pair, CategoryColor};
 use crate::types::{Alphabet, Phoneme, Language};
@@ -90,10 +91,14 @@ fn cell_populated<A: Outer<B, C>, B: Inner<C>, C: Pair + CategoryColor>(
                 .wrap(false);
 
             let response = ui.add(button).context_menu(|ui| {
+                let phoneme = &mut phonemes[phoneme.id()];
+                
                 // TODO: Double check this unwrap
                 let quality = inventory.get_quality(phoneme.id()).unwrap();
                 
-                pane::context::cell_context::<A, B, C>(ui, quality, Some(inventory), ipa, phonemes, phoneme.clone());
+                let context = Context::Bound { inventory, id: phoneme.id() };
+                
+                pane::context::cell_context::<A, B, C>(ui, ipa, phonemes, context);
             });
 
             (response, quality, LanguagePaneRole::Inventory)

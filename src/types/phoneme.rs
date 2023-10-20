@@ -133,7 +133,7 @@ fn from_raw<T: Category>(raw: Rc<[usize]>) -> Rc<[T]> {
     Rc::from(quality.as_slice())
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct PhonemeQuality<A, B, C>(pub Rc<[A]>, pub Rc<[B]>, pub Rc<[C]>)
     where A: Category, B: Category, C: Category;
 
