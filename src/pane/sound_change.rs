@@ -177,10 +177,17 @@ impl pane::Pane for SoundChangePane {
                 ui.horizontal_top(|ui| {
                     // TODO: The clones in this section are not great...
 
+                    let buffer = self.current[SoundChangeRequest::Src]
+                        .clone()
+                        .map(|mut selection| {
+                        selection.phoneme = state.phonemes[selection.phoneme.id()].clone();
+                        selection
+                    });
+
                     self.sound_change_field(
                         ui,
                         SoundChangeRequest::Src,
-                        self.current[SoundChangeRequest::Src].clone(), 
+                        buffer, 
                         &mut state.buffer_state
                     );
         
