@@ -133,4 +133,6 @@ impl Pane for LanguagePane {
                 })
             });        
     }
+
+    fn on_dialect_change(&mut self, _state: &mut crate::State) { /* */ }
 }

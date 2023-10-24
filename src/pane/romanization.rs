@@ -48,6 +48,8 @@ impl Pane for RomanizationPane {
                 });
             });
     }
+
+    fn on_dialect_change(&mut self, _state: &mut crate::State) { /* */ }
 }
 
 fn show_grapheme_row<A, B, C>(

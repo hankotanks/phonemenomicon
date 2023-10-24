@@ -35,6 +35,7 @@ pub trait Pane {
     fn title(&self, state: &State) -> rc::Rc<str>;
     fn setup<'a, 'b: 'a>(&'a mut self, state: &State, ctx: &egui::Context) -> egui::Window<'b>;
     fn show(&mut self, windowed: bool, state: &mut State, ui: &mut egui::Ui);
+    fn on_dialect_change(&mut self, state: &mut State);
 }
 
 pub fn init_panes() -> EnumMap<PaneId, Box<dyn Pane>> {

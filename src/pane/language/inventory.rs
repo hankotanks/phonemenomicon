@@ -270,6 +270,8 @@ impl<'a, 'b, A, B, C> pane::Pane for InventoryPane<'a, 'b, A, B, C>
             &state.ipa
         );
     }
+
+    fn on_dialect_change(&mut self, _state: &mut crate::State) { /* */ }
 }
 
 pub fn repeating_replace(

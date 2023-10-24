@@ -61,6 +61,7 @@ fn show_dialect_internal(
         
             if response.clicked() {
                 state.inventory = state.language_tree[id];
+                state.inventory_index = id;
             }
 
             let dialect_button_center = response.rect.center();
@@ -248,7 +249,7 @@ impl Pane for DialectPane {
             show_dialect(ui, state, state.root,
                 &mut self.renaming, &mut self.current, cell_width);
         });
-
-        
     }
+
+    fn on_dialect_change(&mut self, _state: &mut crate::State) { /* */ }
 }

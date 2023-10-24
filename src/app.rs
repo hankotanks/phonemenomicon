@@ -140,6 +140,8 @@ impl eframe::App for App {
     }
 
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        let old_dialect = self.state.inventory;
+
         egui::TopBottomPanel::top("top-panel").show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
                 ui.menu_button("Dock", |ui| {
@@ -202,5 +204,11 @@ impl eframe::App for App {
         egui::TopBottomPanel::bottom("bottom-panel").show(ctx, |ui| {
             ui.label(STATUS.lock().as_str());
         });
+
+        if self.state.inventory != old_dialect {
+            for (_, pane) in self.panes.iter_mut() {
+                pane.on_dialect_change(&mut self.state);
+            }
+        }
     }
 }

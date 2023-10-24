@@ -3,6 +3,7 @@ use std::mem;
 use egui::RichText;
 use egui_extras::Size;
 use enum_map::EnumMap;
+use petgraph::stable_graph::NodeIndex;
 
 use crate::app::{FONT_ID, STATUS};
 
@@ -36,14 +37,16 @@ impl SoundChangeRequest {
 
 pub struct SoundChangePane {
     request: Option<SoundChangeRequest>,
-    current: EnumMap<SoundChangeRequest, Option<Selection>>
+    current: EnumMap<SoundChangeRequest, Option<Selection>>,
+    dialect: Option<NodeIndex<u32>>
 }
 
 impl SoundChangePane {
     pub fn new() -> Self {
         Self {
             request: None,
-            current: EnumMap::default()
+            current: EnumMap::default(),
+            dialect: None
         }
     }
 
@@ -170,6 +173,25 @@ impl pane::Pane for SoundChangePane {
             .exact_height(panel_height)
             .show_inside(ui, |ui| {
 
+            ui.horizontal(|ui| {
+                let mut dialects = state.language_tree
+                    .neighbors_directed(state.inventory_index, petgraph::Outgoing)
+                    .peekable();
+                
+                let content = match dialects.peek() {
+                    Some(..) => "Select target dialect",
+                    None => "Currently selected language must have at least one dialect",
+                };
+
+                ui.label(content);
+
+                for child in dialects {
+                    let content = state.dialects[state.language_tree[child]].name.clone();
+
+                    ui.selectable_value(&mut self.dialect, Some(child), content.as_ref());
+                }
+            });
+
             let mut margin = egui::Margin::default();
 
             margin.bottom += ui.style().spacing.item_spacing.y * 2.;
@@ -220,5 +242,9 @@ impl pane::Pane for SoundChangePane {
                 });
             });
         });
+    }
+
+    fn on_dialect_change(&mut self, _state: &mut crate::State) {
+        self.dialect = None;
     }
 }

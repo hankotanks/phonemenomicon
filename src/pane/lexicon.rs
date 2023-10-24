@@ -14,4 +14,6 @@ impl Pane for LexiconPane {
     fn show(&mut self, _windowed: bool, _state: &mut crate::State, _ui: &mut egui::Ui) {
         
     }
+
+    fn on_dialect_change(&mut self, _state: &mut crate::State) { /* */ }
 }
