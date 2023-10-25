@@ -1,7 +1,7 @@
 
 use std::rc;
 
-use crate::types::Alphabet;
+use crate::types::{Alphabet, SoundChange};
 
 use crate::types::category::{
     Articulation, 
@@ -16,7 +16,8 @@ use crate::types::category::{
 pub struct Language {
     pub name: rc::Rc<str>,
     pub consonants: Alphabet<Articulation, Region, Voicing>,
-    pub vowels: Alphabet<Constriction, Place, Rounding>
+    pub vowels: Alphabet<Constriction, Place, Rounding>,
+    pub sound_changes: Vec<SoundChange>
 }
 
 impl Default for Language {
@@ -24,7 +25,8 @@ impl Default for Language {
         Self { 
             name: rc::Rc::from("Untitled"),
             consonants: Alphabet::new(), 
-            vowels: Alphabet::new()
+            vowels: Alphabet::new(),
+            sound_changes: Vec::new()
         }
     }
 }

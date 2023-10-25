@@ -1,9 +1,10 @@
 use std::mem;
 
 use egui::RichText;
-use egui_extras::Size;
+use egui_extras::{Size, Column};
 use enum_map::EnumMap;
 use petgraph::stable_graph::NodeIndex;
+use slotmap::SlotMap;
 
 use crate::app::{FONT_ID, STATUS};
 
@@ -11,7 +12,7 @@ use crate::pane;
 use crate::pane::language::LanguagePaneRole;
 
 use crate::state::Selection;
-use crate::types::{CONSONANT, VOWEL, PhonemeQuality};
+use crate::types::{CONSONANT, VOWEL, PhonemeQuality, SoundChange, SoundChangeContext, Language, Phoneme};
 
 use crate::types::category::{Articulation, Region, Voicing};
 use crate::types::category::{Constriction, Place, Rounding};
@@ -123,6 +124,85 @@ impl SoundChangePane {
     }
 }
 
+fn show_sound_change(
+    mut row: egui_extras::TableRow<'_, '_>, 
+    phonemes: &SlotMap<slotmap::DefaultKey, Phoneme>,
+    parent: &Language, 
+    child: &Language, 
+    sound_change: &SoundChange) -> egui::Response {
+
+    let SoundChange { src, dst, .. } = sound_change;
+
+    row.col(|ui| {
+        let phoneme = &phonemes[*src];
+        
+        let discriminant = mem::discriminant(&phoneme.phone);
+
+        let cell_color = if discriminant == CONSONANT {
+            let quality = parent.consonants.get_quality(*src);
+            util::cell_color(ui, quality)
+        } else if discriminant == VOWEL {
+            let quality = parent.vowels.get_quality(*src);
+            util::cell_color(ui, quality)
+        } else {
+            unreachable!();
+        };
+        
+        ui.painter().rect_filled(
+            { 
+                let mut rect = ui.available_rect_before_wrap();
+
+                rect.set_bottom(rect.bottom() - ui.style().spacing.item_spacing.y);
+                rect
+            },
+            0., cell_color);
+
+        let content = egui::RichText::new(format!("{}", phoneme))
+            .font(FONT_ID.to_owned())
+            .background_color(egui::Color32::TRANSPARENT);
+
+        ui.label(content); 
+    });
+
+    row.col(|ui| {
+        let phoneme = &phonemes[*dst];
+        
+        let discriminant = mem::discriminant(&phoneme.phone);
+
+        let cell_color = if discriminant == CONSONANT {
+            let quality = child.consonants.get_quality(*dst);
+            util::cell_color(ui, quality)
+        } else if discriminant == VOWEL {
+            let quality = child.vowels.get_quality(*dst);
+            util::cell_color(ui, quality)
+        } else {
+            unreachable!();
+        };
+        
+        ui.painter().rect_filled(
+            { 
+                let mut rect = ui.available_rect_before_wrap();
+
+                rect.set_bottom(rect.bottom() - ui.style().spacing.item_spacing.y);
+                rect
+            },
+            0., cell_color);
+
+        let content = egui::RichText::new(format!("{}", phoneme))
+            .font(FONT_ID.to_owned())
+            .background_color(egui::Color32::TRANSPARENT);
+
+        ui.label(content); 
+    });
+
+    let mut response = None;
+    row.col(|ui| {
+        response = Some(ui.button("Delete"));
+    });
+
+    response.unwrap()
+}
+
 impl pane::Pane for SoundChangePane {
     fn title(&self, _state: &crate::State) -> std::rc::Rc<str> {
         std::rc::Rc::from("Sound Changes")
@@ -138,9 +218,15 @@ impl pane::Pane for SoundChangePane {
             if let Some(buffer_contents) = state.buffer.take() {
                 let Selection { ref source, .. } = buffer_contents;
 
-                let mut advance = true;
                 if request.is_valid_source(*source) {
                     self.current[request] = Some(buffer_contents);
+
+                    // TODO: ESC should cancel selection
+                    if let SoundChangeRequest::Src = request {
+                        self.request = Some(SoundChangeRequest::Dst);
+                    } else if let SoundChangeRequest::Dst = request {
+                        self.request = None;
+                    }
                 } else {
                     // TODO: This else statement assumes that there will never
                     // be another variant of SoundChangeRequest added
@@ -148,20 +234,6 @@ impl pane::Pane for SoundChangePane {
                     let mut status = STATUS.lock();
                     status.clear();
                     status.push_str("Sound change's source must be selected from the inventory. Select another phoneme.");
-
-                    advance = false;
-                }
-                
-                // TODO: When not advancing to the next button,
-                // Toggle button's don't lose focus after selection
-
-                // TODO: ESC should cancel selection
-                if let SoundChangeRequest::Src = request {
-                    if advance && self.current[SoundChangeRequest::Dst].is_none() { 
-                        self.request = Some(SoundChangeRequest::Dst); 
-                    }
-                } else if let SoundChangeRequest::Dst = request {
-                    self.request = None;
                 }
             }
         }
@@ -180,7 +252,7 @@ impl pane::Pane for SoundChangePane {
                 
                 let content = match dialects.peek() {
                     Some(..) => "Select target dialect",
-                    None => "Currently selected language must have at least one dialect",
+                    None => "Selected language must have at least one dialect to apply sound changes",
                 };
 
                 ui.label(content);
@@ -225,12 +297,16 @@ impl pane::Pane for SoundChangePane {
 
                         response.unwrap().context_menu(|ui| {
                             if mem::discriminant(&phoneme.phone) == CONSONANT {
-                                let quality: PhonemeQuality<Articulation, Region, Voicing> = PhonemeQuality::from_raw(quality.clone());
+                                let quality: PhonemeQuality<Articulation, Region, Voicing> = //
+                                    PhonemeQuality::from_raw(quality.clone());
+
                                 let context = Context::Free { quality, phoneme };
         
                                 pane::context::cell_context(ui, &state.ipa, &mut state.phonemes, context);
                             } else if mem::discriminant(&phoneme.phone) == VOWEL {
-                                let quality: PhonemeQuality<Constriction, Place, Rounding> = PhonemeQuality::from_raw(quality.clone());
+                                let quality: PhonemeQuality<Constriction, Place, Rounding> = //
+                                    PhonemeQuality::from_raw(quality.clone());
+                                    
                                 let context = Context::Free { quality, phoneme };
     
                                 pane::context::cell_context(ui, &state.ipa, &mut state.phonemes, context);
@@ -239,9 +315,99 @@ impl pane::Pane for SoundChangePane {
                             };
                         });
                     }
+
+                    ui.separator();
+                    
+                    match self.dialect {
+                        Some(dialect) if ui.button("Add").clicked() && 
+                            self.current.iter().fold(true, |a, (_, b)| a && b.is_some())=> {
+                            let sound_change = SoundChange {
+                                src: self.current[SoundChangeRequest::Src].as_ref().unwrap().phoneme.id(),
+                                dst: {
+                                    let Selection { phoneme, quality, .. } = //
+                                        self.current[SoundChangeRequest::Dst].as_ref().unwrap();
+
+                                    // TODO: This could be a utility function, similar to `add_symbol_to_alphabet`
+                                    let id = state.phonemes.insert(phoneme.clone());
+
+                                    state.phonemes[id].set_id(id);
+
+                                    let quality = quality.clone();
+
+                                    let discriminant = mem::discriminant(&state.phonemes[id].phone);
+                                    if discriminant == CONSONANT {
+                                        let quality = PhonemeQuality::from_raw(quality);
+                                        state.dialects[state.language_tree[dialect]].consonants.add_phoneme(id, quality);
+                                    } else if discriminant == VOWEL {
+                                        let quality = PhonemeQuality::from_raw(quality);
+                                        state.dialects[state.language_tree[dialect]].vowels.add_phoneme(id, quality);
+                                    } else {
+                                        unreachable!();
+                                    }
+
+                                    id                                    
+                                },
+                                context: (SoundChangeContext::Unrestricted, SoundChangeContext::Unrestricted)
+                            };
+
+                            self.current[SoundChangeRequest::Src] = None;
+                            self.current[SoundChangeRequest::Dst] = None;
+                            
+                            state.dialects[state.language_tree[dialect]].sound_changes.push(sound_change);
+                        },
+                        _ => { /*  */ },
+                    }
                 });
             });
         });
+
+        if let Some(id) = self.dialect {
+            let dialect = &state.dialects[state.language_tree[id]];
+
+            let row_height = FONT_ID.size;
+            let row_height = row_height + ui.style().spacing.item_spacing.y * 4.;
+            let row_height = row_height + ui.style().spacing.button_padding.y * 2.;
+
+            let mut deletion_queue = Vec::new();
+            ui.vertical_centered(|ui| {
+                egui_extras::TableBuilder::new(ui)
+                    .columns(Column::remainder(), 3)
+                    .vscroll(true)
+                    .body(|body| {
+
+                    body.rows(row_height, dialect.sound_changes.len(), 
+                        |idx, row| {
+                            let parent = &state.dialects[state.inventory];
+
+                            let response = show_sound_change(row, &state.phonemes, parent, dialect, &dialect.sound_changes[idx]);
+
+                            if response.clicked() {
+                                deletion_queue.insert(0, idx);
+                            }
+                        }
+                    );
+                });
+            });
+
+            let dialect = &mut state.dialects[state.language_tree[id]];
+
+            for idx in deletion_queue.drain(0..) {
+                let id = dialect.sound_changes[idx].dst;
+
+                let discriminant = mem::discriminant(&state.phonemes[id].phone);
+                if discriminant == CONSONANT {
+                    dialect.consonants.remove_phoneme(id);
+                } else if discriminant == VOWEL {
+                    dialect.vowels.remove_phoneme(id);
+                } else {
+                    unreachable!();
+                }
+
+                state.phonemes.remove(id);
+
+                dialect.sound_changes.remove(idx);
+            }
+        }
     }
 
     fn on_dialect_change(&mut self, _state: &mut crate::State) {

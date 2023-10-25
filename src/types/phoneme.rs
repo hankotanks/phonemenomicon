@@ -79,8 +79,6 @@ impl Phoneme {
     }
 
     pub fn set_id(&mut self, id: slotmap::DefaultKey) {
-        if self.id_state { panic!(); }
-
         self.id = id;
         self.id_state = true;
     }

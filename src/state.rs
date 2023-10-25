@@ -189,5 +189,5 @@ fn init_ipa(phonemes: &mut SlotMap<slotmap::DefaultKey, Phoneme>) -> Language {
         add("ʟ", (LatApproximant, Velar, Voiced).into());
     }    
 
-    Language { name: rc::Rc::from("IPA"), vowels, consonants }
+    Language { name: rc::Rc::from("IPA"), vowels, consonants, sound_changes: Vec::new() }
 }
