@@ -4,10 +4,9 @@
 
 The project is in its _very_ early stages, but development is rapid.
 
-<kbd>
-  <img src="assets/interface.PNG" />
-</kbd>
-
+<table><tr><td>
+    <img src="assets/interface.PNG" />
+</td></tr></table>
 
 ### Next Steps
 
