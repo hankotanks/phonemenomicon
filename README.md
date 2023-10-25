@@ -4,7 +4,10 @@
 
 The project is in its _very_ early stages, but development is rapid.
 
-![Interface](assets/interface.PNG)
+<kbd>
+  <img src="assets/interface.PNG" />
+</kbd>
+
 
 ### Next Steps
 
